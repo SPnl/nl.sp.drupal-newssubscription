@@ -1,8 +1,8 @@
-# Drupal SP Memberform
+# Drupal SP Newssubscription form
 
-New membership form for SP.
+New newssubscription form for SP.
 
-## Testing
+## Testing -> needs to be updated!
 
 1. First, run `composer install` in the project directory to install the testing software
 2. Be sure to run Selenium in the background and install an appropiate webdriver (in our case, Chrome)
