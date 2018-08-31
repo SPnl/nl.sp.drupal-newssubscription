@@ -1,0 +1,117 @@
+<?php
+
+/**
+ * @file Memberform module.
+ */
+
+/**
+ * Include form page definitions.
+ */
+module_load_include('inc', 'newssubscription', 'newssubscription_helpers');
+module_load_include('inc', 'pathauto', 'pathauto');
+
+// Include form definition files in /pages.
+module_load_include('inc', 'newssubscription', 'multipage_forms/newssubscription_pages_helpers');
+$form_names = newssubscription_get_formnames();
+foreach ($form_names as $form_name) {
+  module_load_include('inc', 'newssubscription', 'multipage_forms/newssubscription_' . $form_name . '_pages');
+}
+
+/**
+ * Implements hook_menu().
+ */
+function newssubscription_menu() {
+  $items = array();
+  $form_names = newssubscription_get_formnames();
+  foreach ($form_names as $form_name) {
+    $settings_callback = 'newssubscription_' . $form_name . '_settings';
+    $path_name = $settings_callback('path_name');
+    $form_title = $settings_callback('form_title');
+    $items[$path_name] = array(
+      'title' => $form_title,
+      'type' => MENU_NORMAL_ITEM,
+      'page callback' => 'newssubscription_get_form',
+      'page arguments' => array('newssubscription_form', $form_name),
+      'file' => 'newssubscription_form.inc',
+      'access callback' => TRUE,
+    );
+    // Optionally set user access permissions.
+    if (!empty($settings_callback('permissions'))) {
+      $items[$path_name]['access callback'] = 'user_access';
+      $items[$path_name]['access arguments'] = $settings_callback('permissions');
+    }
+  }
+
+  $items['admin/config/sp/newssubscription/settings'] = [
+    'title'            => 'Instellingen',
+    'description'      => 'Instellingen voor de nieuwsaanmeldingen',
+    'type'             => MENU_LOCAL_TASK,
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => ['newssubscription_admin_settings_form'],
+    'access callback'  => 'user_access',
+    'access arguments' => ['administer signup forms'],
+    'file'             => 'newssubscription_page_admin.inc',
+    'weight'           => 12,
+  ];
+
+  $items['newssubscription/fout'] = [
+      'title'           => 'Er is een fout opgetreden',
+      'type'            => MENU_CALLBACK,
+      'page callback'   => 'newssubscription_page_error',
+      'access callback' => TRUE,
+      'file'            => 'newssubscription_page_actions.inc',
+  ];
+
+  $items['newssubscription/bevestig/%'] = [
+    'title'           => 'Aanmelding bevestigen',
+    'type'            => MENU_CALLBACK,
+    'page callback'   => 'newssubscription_page_validate',
+    'page arguments'  => [2],
+    'access callback' => TRUE,
+    'file'            => 'newssubscription_page_actions.inc',
+  ];
+
+  return $items;
+}
+
+/**
+ * Custom form callback to pass arguments.
+ *
+ * @param string $form_callback
+ *   General form callback for all forms and pages.
+ * @param string $form_name
+ *   Name of the form to display.
+ *
+ * @return array
+ *   Drupal form render array.
+ */
+function newssubscription_get_form($form_callback, $form_name) {
+  return drupal_get_form($form_callback, $form_name);
+}
+
+/**
+ * Implements hook_cron().
+ */
+function newssubscription_cron() {
+
+  $lastrun = variable_get('newssubscription_cron_lastrun');
+  if ($lastrun < (time() - 3600)) {
+    variable_set('newssubscription_cron_lastrun', time());
+    newssubscription_send_reminders();
+  }
+}
+
+/**
+ * Implements hook_mail().
+ */
+function newssubscription_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'verificatie':
+      newssubscription_get_confirmation_mail($message, $params);
+      break;
+
+    case 'reminder':
+      newssubscription_get_reminder_mail($message, $params);
+      break;
+  }
+}

@@ -1,0 +1,9 @@
+name = SP Nieuws Aanmeld Formulier
+description = Leden kunnen zich aanmelden voor het onvangen van SP Nieuws.
+version = 1.0.0
+core = 7.x
+package = sprbs
+
+dependencies[] = sprbs
+dependencies[] = spciviapi
+dependencies[] = elements

@@ -1,0 +1,190 @@
+<?php
+
+/**
+ * @file Creates database table to store newssubscriptionform values.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function newssubscription_schema() {
+  $schema['newssubscription_storage'] = array(
+    'description' => 'Stores newssubscription storage.',
+    'fields' => array(
+      'sid' => array(
+        'description' => 'Submission id.',
+        'type' => 'serial',
+        'size' => 'big',
+        'not null' => TRUE,
+      ),
+      'form_values' => array(
+        'description' => 'The form storage (json encoded).',
+        'type' => 'blob',
+        'size' => 'normal',
+      ),
+    ),
+    'primary key' => array(
+      'sid',
+    ),
+  );
+
+  $schema['newssubscription_submissions'] = array(
+    'fields'      => array(
+      'id'                   => array(
+        'type' => 'serial',
+      ),
+      'hash'                 => array(
+        'type'   => 'varchar',
+        'length' => 32,
+      ),
+      'name'            => array(
+        'type'   => 'varchar',
+        'length' => 320,
+      ),
+      'firstname'            => array(
+        'type'   => 'varchar',
+        'length' => 150,
+      ),
+      'middlename'           => array(
+        'type'   => 'varchar',
+        'length' => 20,
+      ),
+      'lastname'             => array(
+        'type'   => 'varchar',
+        'length' => 150,
+      ),
+      'email'                => array(
+        'type'   => 'varchar',
+        'length' => 120,
+      ),
+      'contact_id'           => array(
+        'type'     => 'int',
+        'size'   => 'big',
+        'not null' => FALSE,
+      ),
+      'created'              => array(
+        'type'     => 'int',
+        'size'   => 'big',
+        'not null' => TRUE,
+      ),
+      'verified'             => array(
+        'type'     => 'int',
+        'size'   => 'big',
+        'not null' => FALSE,
+      ),
+      'reminded'             => array(
+        'type'     => 'int',
+        'size'   => 'big',
+        'not null' => FALSE,
+      ),
+      'submitted'            => array(
+        'type'     => 'int',
+        'size'   => 'big',
+        'not null' => FALSE,
+      ),
+      'newsletter' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+      ),
+      'zorgwelzijnsport' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+      ),
+      'werkinkomen' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+      ),
+      'wonen' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+      ),
+      'onderwijscultuur' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+      ),
+      'economie' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+      ),
+      'rechtveiligheid' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+      ),
+      'natuurmilieu' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+      ),
+      'internationalezaken' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+      ),
+      'nedlerlandeuropa' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+      ),
+      'belastingfinancien' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+      ),
+      'verkeer' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+      ),
+      'overheidbestuur' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+      ),
+      'defensie' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+      ),
+      'organisatiesp' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'default' => 0,
+      ),
+      'frequency' => array(
+        'type' => 'varchar',
+        'length' => 15,
+      ),
+    ),
+    'primary key' => array(
+      'id',
+    ),
+    'indexes' => array(
+      'hash' => array('hash'),
+      'submitted' => array('submitted'),
+      'newsletter' => array('newsletter'),
+      'zorgwelzijnsport' => array('zorgwelzijnsport'),
+      'werkinkomen' => array('werkinkomen'),
+      'wonen' => array('wonen'),
+      'onderwijscultuur' => array('onderwijscultuur'),
+      'economie' => array('economie'),
+      'rechtveiligheid' => array('rechtveiligheid'),
+      'natuurmilieu' => array('natuurmilieu'),
+      'internationalezaken' => array('internationalezaken'),
+      'nedlerlandeuropa' => array('nedlerlandeuropa'),
+      'belastingfinancien' => array('belastingfinancien'),
+      'verkeer' => array('verkeer'),
+      'overheidbestuur' => array('overheidbestuur'),
+      'defensie' => array('defensie'),
+      'organisatiesp' => array('organisatiesp'),
+      'frequency' => array('frequency'),
+    ),
+  );
+  return $schema;
+}

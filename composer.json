@@ -1,0 +1,15 @@
+{
+  "name": "spnl/nl.sp.drupal-newssubscriptionform",
+  "description": "SP Nieuws Aanmeld Formulier",
+  "type": "drupal-custom-module",
+  "authors": [
+    {
+      "name": "Thomas de Graaff",
+      "email": "tdgraaff@sp.nl"
+    }
+  ],
+  "license": "GPL-2.0",
+  "require-dev": {
+    "codeception/codeception": "^2.4"
+  }
+}
