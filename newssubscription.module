@@ -42,7 +42,16 @@ function newssubscription_menu() {
     }
   }
 
-  $items['admin/config/sp/newssubscription/settings'] = [
+  $items['admin/config/sp/nieuwsaanmeldingen'] = [
+    'title'            => 'Nieuwsaanmeldingen',
+    'type'             => MENU_NORMAL_ITEM,
+    'page callback'    => 'memberform_view_submissions',
+    'access callback'  => 'user_access',
+    'access arguments' => ['administer newssubscription forms'],
+    'file'             => 'memberform_page_admin.inc',
+  ];
+
+  $items['admin/config/sp/nieuwsaanmeldingen/instellingen'] = [
     'title'            => 'Instellingen',
     'description'      => 'Instellingen voor de nieuwsaanmeldingen',
     'type'             => MENU_LOCAL_TASK,
@@ -54,7 +63,7 @@ function newssubscription_menu() {
     'weight'           => 12,
   ];
 
-  $items['newssubscription/fout'] = [
+  $items['nieuwsaanmelding/fout'] = [
       'title'           => 'Er is een fout opgetreden',
       'type'            => MENU_CALLBACK,
       'page callback'   => 'newssubscription_page_error',
@@ -62,10 +71,10 @@ function newssubscription_menu() {
       'file'            => 'newssubscription_page_actions.inc',
   ];
 
-  $items['newssubscription/bevestig/%'] = [
+  $items['nieuwsaanmelding/bevestig/%'] = [
     'title'           => 'Aanmelding bevestigen',
     'type'            => MENU_CALLBACK,
-    'page callback'   => 'newssubscription_page_validate',
+    'page callback'   => 'newssubscription_subscription_validate',
     'page arguments'  => [2],
     'access callback' => TRUE,
     'file'            => 'newssubscription_page_actions.inc',
@@ -97,6 +106,7 @@ function newssubscription_cron() {
   $lastrun = variable_get('newssubscription_cron_lastrun');
   if ($lastrun < (time() - 3600)) {
     variable_set('newssubscription_cron_lastrun', time());
+    newssubscription_submit_pending();
     newssubscription_send_reminders();
   }
 }

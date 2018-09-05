@@ -35,7 +35,7 @@
  */
 function newssubscription_subscribe_settings($variable_name) {
   $settings = array(
-    'path_name' => 'newssubscription/subscribe',
+    'path_name' => 'nieuwsaanmelding/aanmelden',
     'form_title' => 'Aanmelden voor nieuws',
     'no_nav_pages' => array(
       'thanks',
@@ -231,14 +231,14 @@ function newssubscription_subscribe_page_form_submit($form, &$form_state) {
       $store_result = newssubscription_store_submission($form_state);
 
       if (!$store_result['submission_id']) {
-        $form_state['redirect'] = array('aanmelden/fout');
+        $form_state['redirect'] = array('nieuwsaanmelding/fout');
       }
 
       $fields = $store_result['fields'];
       if ($storage['current_page'] == 'summary' && !empty($fields['email'])) {
         // Send confirmation mail when submitting summary page.
         $mail = drupal_mail(
-          'newssubscriptionform', 'verificatie', $fields['email'], LANGUAGE_NONE,
+          'newssubscription', 'verificatie', $fields['email'], LANGUAGE_NONE,
           array(
             'form_state'      => $form_state,
             'hash'            => $storage['hash'],

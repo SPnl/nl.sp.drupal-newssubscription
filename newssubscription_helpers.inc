@@ -99,6 +99,7 @@ function newssubscription_get_formnames() {
  * Defines e-mail.
  */
 function newssubscription_get_confirmation_mail(&$message, $params) {
+  dpm('TEST');
 
   if (!$params['hash'] || !$params['form_state']) {
     throw new \Exception('Params hash or form_state missing.');
@@ -127,11 +128,46 @@ function newssubscription_get_reminder_mail(&$message, $params) {
   }
 
   global $base_url;
-  $validate_url = $base_url . '/aanmelden/bevestig/' . $params['hash'];
+  $validate_url = $base_url . '/nieuwsaanmelding/bevestig/' . $params['hash'];
 
   $message['subject'] = 'Herinnering: bevestig je aanmelding voor SP nieuws';
   $message['body'] = [];
   $message['body'][] = '<p>Gisteren heb je je aangemeld voor SP nieuws.<br />Je hebt je aanmelding echter nog niet bevestigd. Klik op onderstaande link om je aanmelding te bevestigen.</p>';
   $message['body'][] = '<p>' . l($validate_url, $validate_url) . '</p>';
   $message['body'][] = '<p>Met vriendelijke groet,<br />SP';
+}
+
+function newssubscription_submit_pending() {
+
+  $pending = db_select('newssubscription_submissions', 's')
+    ->fields('s')
+    ->isNotNULL('verified')
+    ->isNULL('submitted')
+    ->execute();
+
+  if ($pending) {
+    while ($record = $pending->fetchAssoc()) {
+
+      try {
+        $contact_id = newssubscription_subscribe($record);
+        $error = NULL;
+      }
+      catch (\Exception $e) {
+        $error = $e->getMessage();
+        $contact_id = NULL;
+      }
+
+      db_update('newssubscription_submissions')
+        ->fields([
+          'submitted'  => time(),
+          'contact_id' => $contact_id,
+        ])
+        ->condition('id', $record['id'])
+        ->execute();
+    }
+  }
+  return TRUE;
+}
+
+function newssubscription_subscribe($data = []) {
 }
