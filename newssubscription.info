@@ -6,4 +6,5 @@ package = sprbs
 
 dependencies[] = sprbs
 dependencies[] = spciviapi
+dependencies[] = spcivipush
 dependencies[] = elements

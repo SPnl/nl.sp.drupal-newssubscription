@@ -7,7 +7,8 @@
 /**
  * Include form page definitions.
  */
-module_load_include('inc', 'newssubscription', 'newssubscription_helpers');
+module_load_include('inc', 'newssubscription', 'newssubscription_form_helpers');
+module_load_include('inc', 'newssubscription', 'newssubscription_processing');
 module_load_include('inc', 'pathauto', 'pathauto');
 
 // Include form definition files in /pages.
@@ -43,24 +44,20 @@ function newssubscription_menu() {
   }
 
   $items['admin/config/sp/nieuwsaanmeldingen'] = [
-    'title'            => 'Nieuwsaanmeldingen',
+    'title'            => 'Nieuwsaanmeldinstellingen',
+    'description'      => 'Instellingen voor nieuwsaanmeldingen',
     'type'             => MENU_NORMAL_ITEM,
-    'page callback'    => 'memberform_view_submissions',
-    'access callback'  => 'user_access',
-    'access arguments' => ['administer newssubscription forms'],
-    'file'             => 'memberform_page_admin.inc',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => ['newssubscription_settings_form'],
+    'access callback'  => 'newssubscription_access',
+    'file'             => 'newssubscription_settings_form.inc',
   ];
 
   $items['admin/config/sp/nieuwsaanmeldingen/instellingen'] = [
-    'title'            => 'Instellingen',
-    'description'      => 'Instellingen voor de nieuwsaanmeldingen',
-    'type'             => MENU_LOCAL_TASK,
-    'page callback'    => 'drupal_get_form',
-    'page arguments'   => ['newssubscription_admin_settings_form'],
-    'access callback'  => 'user_access',
-    'access arguments' => ['administer signup forms'],
-    'file'             => 'newssubscription_page_admin.inc',
-    'weight'           => 12,
+    'title'            => 'Nieuwsaanmeldinstellingen',
+    'description'      => 'Instellingen voor nieuwsaanmeldingen',
+    'type'             => MENU_DEFAULT_LOCAL_TASK,
+    'access callback'  => 'newssubscription_access',
   ];
 
   $items['nieuwsaanmelding/fout'] = [
@@ -98,17 +95,25 @@ function newssubscription_get_form($form_callback, $form_name) {
   return drupal_get_form($form_callback, $form_name);
 }
 
+function newssubscription_access() {
+  global $user;
+  if (in_array('administrator', $user->roles)) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
 /**
  * Implements hook_cron().
  */
 function newssubscription_cron() {
 
   $lastrun = variable_get('newssubscription_cron_lastrun');
-  if ($lastrun < (time() - 3600)) {
+  //if ($lastrun < (time() - 3600)) {
     variable_set('newssubscription_cron_lastrun', time());
     newssubscription_submit_pending();
     newssubscription_send_reminders();
-  }
+  //}
 }
 
 /**
@@ -122,6 +127,9 @@ function newssubscription_mail($key, &$message, $params) {
 
     case 'reminder':
       newssubscription_get_reminder_mail($message, $params);
+      break;
+    case 'success':
+      newssubscription_get_success_mail($message, $params);
       break;
   }
 }

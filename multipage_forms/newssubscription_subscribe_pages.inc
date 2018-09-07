@@ -58,6 +58,19 @@ function newssubscription_subscribe_settings($variable_name) {
  * Form definition for start page.
  */
 function newssubscription_subscribe_page_start_form(&$form, &$form_state) {
+  // Check if settigns are ok.
+  if (
+    empty(variable_get('newssubscription_newsletter_field')) ||
+    empty(variable_get('newssubscription_themes_field')) ||
+    empty(variable_get('newssubscription_frequency_field'))
+  ) {
+    $form['settings_error'] = array(
+      '#markup' => '<p>Voor een juiste werking van de nieuwsaanmeldmodule moeten eerst de instellingen voor CiviCRM goed gezet worden. Ga hiervoor als beheerder naar <a href="/admin/config/sp/nieuwsaanmeldingen/instellingen">nieuwsaanmelding instellingen</a> en selecteer de correcte CiviCRM velden. Zodra de juiste CiviCRM velden zijn geselecteerd werkt het aanmeldformulier.</p>',
+    );
+    return;
+  }
+
+  // Create form.
   $form['input'] = array(
     '#type' => 'fieldset',
     '#attributes' => array(
@@ -235,11 +248,12 @@ function newssubscription_subscribe_page_form_submit($form, &$form_state) {
       }
 
       $fields = $store_result['fields'];
-      if ($storage['current_page'] == 'summary' && !empty($fields['email'])) {
+      if ($storage['current_page'] == 'summary' && !empty($fields['email']) && $trigger === 'next_page') {
         // Send confirmation mail when submitting summary page.
         $mail = drupal_mail(
           'newssubscription', 'verificatie', $fields['email'], LANGUAGE_NONE,
           array(
+            'first_name'      => $storage['first_name'],
             'form_state'      => $form_state,
             'hash'            => $storage['hash'],
             'format'          => SWIFTMAILER_FORMAT_HTML,

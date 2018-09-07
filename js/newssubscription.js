@@ -10,9 +10,9 @@
       // Code to be run on page load, and
       // on ajax load added here
 
-      // Determine scroll 
-      var scrollPos = $('h1').first().offset().top;
-  
+      // Determine scroll
+      var scrollPos = $('.newssubscription-navigation').first().offset().top;
+
       if(( $( ".messages.error" ).first().length)) {
         scrollPos = $('.messages.error').first().parent().offset().top;
       } else {

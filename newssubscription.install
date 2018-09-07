@@ -7,6 +7,15 @@
 /**
  * Implements hook_schema().
  */
+function newssubscription_uninstall() {
+  variable_del('newssubscription_themes_field');
+  variable_del('newssubscription_newsletter_field');
+  variable_del('newssubscription_frequency_field');
+}
+
+/**
+ * Implements hook_schema().
+ */
 function newssubscription_schema() {
   $schema['newssubscription_storage'] = array(
     'description' => 'Stores newssubscription storage.',
@@ -82,6 +91,11 @@ function newssubscription_schema() {
         'size'   => 'big',
         'not null' => FALSE,
       ),
+      'pushstate' => array(
+        'description' => 'The submission civicrm push state.',
+        'type' => 'int',
+        'size' => 'tiny',
+      ),
       'newsletter' => array(
         'type' => 'int',
         'size' => 'tiny',
@@ -127,7 +141,7 @@ function newssubscription_schema() {
         'size' => 'tiny',
         'default' => 0,
       ),
-      'nedlerlandeuropa' => array(
+      'nederlandeuropa' => array(
         'type' => 'int',
         'size' => 'tiny',
         'default' => 0,
@@ -177,7 +191,7 @@ function newssubscription_schema() {
       'rechtveiligheid' => array('rechtveiligheid'),
       'natuurmilieu' => array('natuurmilieu'),
       'internationalezaken' => array('internationalezaken'),
-      'nedlerlandeuropa' => array('nedlerlandeuropa'),
+      'nederlandeuropa' => array('nederlandeuropa'),
       'belastingfinancien' => array('belastingfinancien'),
       'verkeer' => array('verkeer'),
       'overheidbestuur' => array('overheidbestuur'),

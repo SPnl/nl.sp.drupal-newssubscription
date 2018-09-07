@@ -288,24 +288,3 @@ function newssubscription_store_submission($form_state) {
 function newssubscription_hv($value) {
   return empty($value) ? NULL : $value;
 }
-/**
- * Returns themes.
- */
-function newssubscription_get_themes() {
-  return array(
-    'zorgwelzijnsport' => 'Zorg, Welzijn en Sport',
-    'werkinkomen' => 'Werk en Inkomen',
-    'wonen' => 'Wonen',
-    'onderwijscultuur' => 'Onderwijs en Cultuur',
-    'economie' => 'Economie',
-    'rechtveiligheid' => 'Recht en Veiligheid',
-    'natuurmilieu' => 'Natuur en Milieu',
-    'internationalezaken' => 'Internationale zaken',
-    'nedlerlandeuropa' => 'Nederland en Europa',
-    'belastingfinancien' => 'Belasting en Financiën',
-    'verkeer' => 'Verkeer',
-    'overheidbestuur' => 'Overheid en Bestuur',
-    'defensie' => 'Defensie',
-    'organisatiesp' => 'Organisatie SP',
-  );
-}
