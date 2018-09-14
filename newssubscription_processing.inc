@@ -52,40 +52,6 @@ function newssubscription_get_success_mail(&$message, $params) {
   $message['body'][] = '<p>Met vriendelijke groet,<br />SP';
 }
 
-function newssubscription_send_reminders() {
-  $unverified = db_select('newssubscription_submissions', 's')
-    ->fields('s')
-    ->condition('created', time() - 86400, '<')
-    ->isNull('verified')
-    ->isNull('reminded')
-    ->execute();
-
-  if ($unverified) {
-
-    while ($record = $unverified->fetchAssoc()) {
-
-      $mail = drupal_mail(
-        'newssubscription', 'reminder', $record['email'], LANGUAGE_NONE,
-        [
-          'first_name'      => $record['firstname'],
-          'hash'            => $record['hash'],
-          'format'          => SWIFTMAILER_FORMAT_HTML,
-        ]
-      );
-
-      if (!empty($mail['send'])) {
-
-        db_update('newssubscription_submissions')
-          ->fields([
-            'reminded' => time(),
-          ])
-          ->condition('id', $record['id'])
-          ->execute();
-      }
-    }
-  }
-}
-
 function newssubscription_submit_pending() {
 
   $pending = db_select('newssubscription_submissions', 's')
@@ -210,19 +176,94 @@ function newssubscription_push_subscriptions($contact_id, $subscription) {
  */
 function newssubscription_get_themes() {
   return array(
-    'zorgwelzijnsport' => 'Zorg, Welzijn en Sport',
-    'werkinkomen' => 'Werk en Inkomen',
-    'wonen' => 'Wonen',
-    'onderwijscultuur' => 'Onderwijs en Cultuur',
-    'economie' => 'Economie',
-    'rechtveiligheid' => 'Recht en Veiligheid',
-    'natuurmilieu' => 'Natuur en Milieu',
-    'internationalezaken' => 'Internationale zaken',
-    'nederlandeuropa' => 'Nederland en Europa',
-    'belastingfinancien' => 'Belasting en Financiën',
-    'verkeer' => 'Verkeer',
-    'overheidbestuur' => 'Overheid en Bestuur',
-    'defensie' => 'Defensie',
-    'organisatiesp' => 'Organisatie SP',
+    'zorgwelzijnsport' => array(
+      'title' => 'Zorg, Welzijn en Sport',
+      'nid' => 11,
+    ),
+    'werkinkomen' => array(
+      'title' => 'Werk en Inkomen',
+      'nid' => 16,
+    ),
+    'wonen' => array(
+      'title' => 'Wonen',
+      'nid' => 15,
+    ),
+    'onderwijscultuur' => array(
+      'title' => 'Onderwijs en Cultuur',
+      'nid' => 17,
+    ),
+    'economie' => array(
+      'title' => 'Economie',
+      'nid' => 31,
+    ),
+    'rechtveiligheid' => array(
+      'title' => 'Recht en Veiligheid',
+      'nid' => 29,
+    ),
+    'natuurmilieu' => array(
+      'title' => 'Natuur en Milieu',
+      'nid' => 28,
+    ),
+    'internationalezaken' => array(
+      'title' => 'Internationale zaken',
+      'nid' => 32,
+    ),
+    'nederlandeuropa' => array(
+      'title' => 'Nederland en Europa',
+      'nid' => 14,
+    ),
+    'belastingfinancien' => array(
+      'title' => 'Belasting en Financiën',
+      'nid' => 21,
+    ),
+    'verkeer' => array(
+      'title' => 'Verkeer',
+      'nid' => 187,
+    ),
+    'overheidbestuur' => array(
+      'title' => 'Overheid en Bestuur',
+      'nid' => 30,
+    ),
+    'defensie' => array(
+      'title' => 'Defensie',
+      'nid' => 24,
+    ),
+    'organisatiesp' => array(
+      'title' => 'Organisatie SP',
+      'nid' => 189,
+    ),
   );
+}
+
+function newssubscription_get_themes_list() {
+  $themes_list = &drupal_static(__FUNCTION__);
+  if (!isset($themes_list)) {
+    $themes_list = array();
+    $themes = newssubscription_get_themes();
+    foreach($themes as $key => $value) {
+      $themes_list[$key] = $value['title'];
+    }
+  }
+  return $themes_list;
+}
+
+function newssubscription_get_themes_nids() {
+  $themes_nids = &drupal_static(__FUNCTION__);
+  if (!isset($themes_nids)) {
+    $themes_nids = array();
+    $themes = newssubscription_get_themes();
+    foreach($themes as $key => $value) {
+      $themes_nids[$key] = $value['nid'];
+    }
+  }
+  return $themes_nids;
+}
+
+function newssubscription_process_civi_result($result, $error_message) {
+  if (!isset($result['is_error']) || $result['is_error'] == 1) {
+    watchdog('newssubscription', $error_message);
+    drupal_set_message($error_message, 'error');
+    return FALSE;
+  }
+  return TRUE;
 }

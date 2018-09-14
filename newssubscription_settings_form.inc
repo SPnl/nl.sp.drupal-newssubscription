@@ -1,6 +1,20 @@
 <?php
 
 function newssubscription_settings_form($form, &$form_state) {
+  // Add custom submit function.
+  $form['#submit'][] = 'newssubscription_settings_form_submit';
+
+  // General settings.
+  $form['newssubscription_general_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Nieuwsaanmedling algemene instellingen',
+  );
+
+  $form['newssubscription_general_settings']['newssubscription_active'] = array(
+    '#type' => 'checkbox',
+    '#title' => 'Verzend nieuwsupdates',
+    '#default_value' => variable_get('newssubscription_active', NULL),
+  );
 
   // Civicrm settings.
   $form['newssubscription_civicrm_settings'] = array(
@@ -10,30 +24,46 @@ function newssubscription_settings_form($form, &$form_state) {
 
   $custom_fields = newssubscription_get_civi_custom_fields();
 
-  $form['newssubscription_civicrm_settings']['newssubscription_newsletter_field'] = array(
-    '#type' => 'select',
-    '#title' => "Nieuwsbrief veld",
-    '#options' => $custom_fields,
-    '#empty_option' => '- Geen -',
-    '#default_value' => variable_get('newssubscription_newsletter_field', array()),
-  );
-  $form['newssubscription_civicrm_settings']['newssubscription_themes_field'] = array(
-    '#type' => 'select',
-    '#title' => "Thema's veld:",
-    '#options' => $custom_fields,
-    '#empty_option' => '- Geen -',
-    '#default_value' => variable_get('newssubscription_themes_field', array()),
-  );
+  if ($custom_fields) {
+    $form['newssubscription_civicrm_settings']['newssubscription_newsletter_field'] = array(
+      '#type' => 'select',
+      '#title' => "Nieuwsbrief veld",
+      '#options' => $custom_fields,
+      '#empty_option' => '- Geen -',
+      '#default_value' => variable_get('newssubscription_newsletter_field', array()),
+    );
+    $form['newssubscription_civicrm_settings']['newssubscription_themes_field'] = array(
+      '#type' => 'select',
+      '#title' => "Thema's veld:",
+      '#options' => $custom_fields,
+      '#empty_option' => '- Geen -',
+      '#default_value' => variable_get('newssubscription_themes_field', array()),
+    );
 
-  $form['newssubscription_civicrm_settings']['newssubscription_frequency_field'] = array(
-    '#type' => 'select',
-    '#title' => "Nieuwsmailfrequentie veld",
-    '#options' => $custom_fields,
-    '#empty_option' => '- Geen -',
-    '#default_value' => variable_get('newssubscription_frequency_field', array()),
-  );
+    $form['newssubscription_civicrm_settings']['newssubscription_frequency_field'] = array(
+      '#type' => 'select',
+      '#title' => "Nieuwsmailfrequentie veld",
+      '#options' => $custom_fields,
+      '#empty_option' => '- Geen -',
+      '#default_value' => variable_get('newssubscription_frequency_field', array()),
+    );
+  }
+  else {
+    $form['civicrm_error'] = array(
+      '#markup' => '<p>Er kan geen verbinding met CiviCRM worden gemaakt. Controleer de CiviCRM API instellingen.</p>',
+    );
+  }
 
   return system_settings_form($form);
+}
+
+function newssubscription_settings_form_submit($form, &$form_state) {
+  $values = $form_state['values'];
+  if ($form['newssubscription_general_settings']['newssubscription_active']['#default_value'] !== $values['newssubscription_active']) {
+    if ($values['newssubscription_active']) {
+      variable_set('newssubscription_active_date', time());
+    }
+  }
 }
 
 function newssubscription_get_civi_custom_fields() {

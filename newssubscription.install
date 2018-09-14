@@ -5,12 +5,28 @@
  */
 
 /**
- * Implements hook_schema().
+ * Implements hook_install.
+ */
+function newssubscription_install() {
+  variable_set('newssubscription_direct_mail_last_publication_date', time());
+  variable_set('newssubscription_daily_digets_last_publication_date', time());
+  variable_set('newssubscription_weekly_digest_last_publication_date', time());
+}
+
+/**
+ * Implements hook_uninstall().
  */
 function newssubscription_uninstall() {
   variable_del('newssubscription_themes_field');
   variable_del('newssubscription_newsletter_field');
   variable_del('newssubscription_frequency_field');
+  variable_del('newssubscription_active_date');
+  variable_del('newssubscription_direct_mail_last_creation_date');
+  variable_del('newssubscription_daily_digest_last_creation_date');
+  variable_del('newssubscription_weekly_digest_last_creation_date');
+  variable_del('newssubscription_direct_mail_last_cron');
+  variable_del('newssubscription_daily_digest_last_cron');
+  variable_del('newssubscription_weekly_digest_last_cron');
 }
 
 /**

@@ -9,6 +9,7 @@
  */
 module_load_include('inc', 'newssubscription', 'newssubscription_form_helpers');
 module_load_include('inc', 'newssubscription', 'newssubscription_processing');
+module_load_include('inc', 'newssubscription', 'newssubscription_news_processing');
 module_load_include('inc', 'pathauto', 'pathauto');
 
 // Include form definition files in /pages.
@@ -60,6 +61,15 @@ function newssubscription_menu() {
     'access callback'  => 'newssubscription_access',
   ];
 
+  $items['admin/config/sp/nieuwsaanmeldingen/test'] = [
+    'title'            => 'TEST',
+    'type'             => MENU_LOCAL_TASK,
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => ['newssubscription_test_form'],
+    'access callback'  => 'newssubscription_access',
+    'file'             => 'newssubscription_test_form.inc',
+  ];
+
   $items['nieuwsaanmelding/fout'] = [
       'title'           => 'Er is een fout opgetreden',
       'type'            => MENU_CALLBACK,
@@ -109,18 +119,26 @@ function newssubscription_access() {
 function newssubscription_cron() {
 
   $lastrun = variable_get('newssubscription_cron_lastrun');
-  //if ($lastrun < (time() - 3600)) {
+  if ($lastrun < (time() - 3600)) {
     variable_set('newssubscription_cron_lastrun', time());
     newssubscription_submit_pending();
     newssubscription_send_reminders();
-  //}
+  }
+  $active = variable_get('newssubscription_active', NULL);
+  if ($active) {
+    newssubscription_send_news();
+  }
 }
 
 /**
- * Implements hook_mail().
+ * Implements hook_mail(). Mail content created in newssubscription_processing.inc.
  */
 function newssubscription_mail($key, &$message, $params) {
   switch ($key) {
+    case "new-content-message":
+      newssubscription_get_new_content_mail($message, $params);
+      break;
+
     case 'verificatie':
       newssubscription_get_confirmation_mail($message, $params);
       break;
@@ -132,4 +150,23 @@ function newssubscription_mail($key, &$message, $params) {
       newssubscription_get_success_mail($message, $params);
       break;
   }
+}
+
+/*
+ * Implements hook_theme().
+ */
+function newssubscription_theme($existing, $type, $theme, $path) {
+  if ($type == 'module') {
+    return array(
+      'newssubscription_theme_mail_single' => array(
+        'variables' => array('title' => NULL, 'themes' => NULL, 'sections'=>NULL, 'persons' => NULL, 'links' => NULL),
+        'template' => 'newssubscription-mail-single'
+      ),
+      'newssubscription_theme_mail_digest' => array(
+        'variables' => array('items' => NULL,),
+        'template' => 'newssubscription-mail-digest'
+      ),
+    );
+  }
+  return array(); //will raise fatal error if void
 }
