@@ -27,7 +27,7 @@
    */
 ?>
 <h1><?php print $title; ?></h1>
-<?php print theme_image_style(array('style_name' => 'actualiteit_item_crop_480_480', 'path' => $image['uri'])); ?>
+<?php print theme_image_style(array('style_name' => 'actualiteit_item_crop_480_480', 'path' => $image['uri'], 'width' => 200, 'height' => 200)); ?>
 <?php foreach ($themes as $theme) : ?>
   <?php $theme_titles[] = $theme['title']; ?>
 <?php endforeach; ?>
@@ -41,7 +41,7 @@
 <p><?php print $section['value']; ?></p>
 <?php break; ?>
 <?php case 'afbeelding': ?>
-<?php print theme_image_style(array('style_name' => 'thumbnail', 'path' => $section['path'])); ?>
+<?php print theme_image_style(array('style_name' => 'thumbnail', 'path' => $section['path'], 'width' => 200, 'height' => 200)); ?>
 <?php if (!empty($section['text'])): ?>
 <p><?php print $section['text']; ?></p>
 <?php endif; ?>
@@ -53,5 +53,7 @@
 <?php endforeach; ?>
 <p><a href="https://www.sp.nl/<?php print $person['path']; ?>">Lees online</a></p>
 <?php foreach ($persons as $person) : ?>
-  <?php print theme_image_style(array('style_name' => 'actualiteit_item_crop_480_480', 'path' => $person['image_path'])); ?>
+<?php if (!empty($person['image_path'])) : ?>
+<?php print theme_image_style(array('style_name' => 'actualiteit_item_crop_480_480', 'path' => $person['image_path'], 'width' => 200, 'height' => 200)); ?>
+<?php endif; ?>
 <?php endforeach; ?>

@@ -30,7 +30,9 @@
 ?>
 <?php foreach ($items as $item): ?>
 <h1><?php print $item['title']; ?></h1>
-<?php print theme_image_style(array('style_name' => 'actualiteit_item_crop_480_480', 'path' => $item['image']['uri'])); ?>
+<?php if (!empty($item['image']['uri'])) : ?>
+<?php print theme_image_style(array('style_name' => 'actualiteit_item_crop_480_480', 'path' => $item['image']['uri'], 'width' => 200, 'height' => 200)); ?>
+<?php endif; ?>
 <?php $theme_titles = array(); ?>
 <?php foreach ($item['themes'] as $theme) : ?>
   <?php $theme_titles[] = $theme['title']; ?>
@@ -39,6 +41,8 @@
 <?php print $item['short_text']; ?>
 <p><a href="https://www.sp.nl/<?php print $item['path']; ?>">Lees verder</a></p>
 <?php foreach ($item['persons'] as $person) : ?>
-  <a href="https://www.sp.nl/<?php print $person['path']; ?>"><?php print theme_image_style(array('style_name' => 'actualiteit_item_crop_480_480', 'path' => $person['image_path'])); ?></a>
+<?php if (!empty($person['image_path'])) : ?>
+<a href="https://www.sp.nl/<?php print $person['path']; ?>"><?php print theme_image_style(array('style_name' => 'actualiteit_item_crop_480_480', 'path' => $person['image_path'], 'width' => 200, 'height' => 200)); ?></a>
+<?php endif; ?>
 <?php endforeach; ?>
 <?php endforeach; ?>

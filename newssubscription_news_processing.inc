@@ -18,11 +18,11 @@ function newssubscription_send_news_mail($news_to_send) {
 function newssubscription_send_news() {
   $batch_size = 1000;
   // Weekly digest (sunday = 0, monday = 1 etc.).
-  if (date('w') === 6 && variable_get('newssubscription_weekly_digest_last_cron') < time() - 86400) {
+  if (TRUE || date('w') === 6 && variable_get('newssubscription_weekly_digest_last_cron') < time() - 86400) {
     newssubscription_send_news_by_type('weekly_digest', $batch_size);
   }
   // Daily digest (hour = 0-23).
-  if (date('G') === 16 && variable_get('newssubscription_daily_digest_last_cron') < time() - 3600) {
+  if (TRUE || date('G') === 16 && variable_get('newssubscription_daily_digest_last_cron') < time() - 3600) {
     newssubscription_send_news_by_type('daily_digest', $batch_size);
   }
   // Direct mail.
@@ -44,14 +44,20 @@ function newssubscription_send_news_by_type($type, $batch_size) {
         if ($recipients) {
           // Create send data..
           foreach ($themes as $theme) {
-            foreach ($recipients[$theme] as $recipient) {
-              if (!empty($nodes[$theme])) {
-                $news_to_send_data[$recipient['email']] = array(
-                  'node_ids' => $nodes[$theme],
-                  'first_name' => $recipient['firstname'],
-                  'display_name' => $recipient['display_name'],
-                  'email' => $recipient['email'],
-                );
+            if (!empty($recipients[$theme])) {
+              foreach ($recipients[$theme] as $recipient) {
+                if (!empty($nodes[$theme])) {
+                  if (empty($news_to_send_data[$recipient['email']]['email'])) {
+                    $news_to_send_data[$recipient['email']] = array(
+                      'node_ids' => array(),
+                      'first_name' => empty($recipient['firstname']) ? '' : $recipient['first_name'],
+                      'display_name' => $recipient['display_name'],
+                      'email' => $recipient['email'],
+                    );
+                  }
+                  // Add nodes.
+                  $news_to_send_data[$recipient['email']]['node_ids'] = array_merge($news_to_send_data[$recipient['email']]['node_ids'], $nodes[$theme]);
+                }
               }
             }
           }
@@ -145,7 +151,7 @@ function newssubscription_get_news_recipients($type, $batch_size, $batch, &$reci
     $query = array(
       'sequential' => 1,
       'return' => "custom_" . $newssubscription_themes_field . ",display_name,email,first_name",
-      'custom_' $newssubscription_frequency_field => array($type_translate[$type]),
+      'custom_' . $newssubscription_frequency_field => array($type_translate[$type]),
       'is_deceased' => 0,
       'is_opt_out' => 0,
       'is_deleted' => 0,
@@ -156,10 +162,10 @@ function newssubscription_get_news_recipients($type, $batch_size, $batch, &$reci
     );
     $result = $spcivi->api('Contact', 'get', $query);
     if (newssubscription_process_civi_result($result, 'Fout bij het ophalen van een batch ontvangers (type: ' . $type_translate[$type] . ') uit CiviCRM.')) {
-      if ($result[values]) {
+      if ($result['values']) {
         foreach ($result['values'] as $data) {
           if ($data['custom_' . $newssubscription_themes_field]) {
-            foreach ($data['custom_' $newssubscription_themes_field] as $theme) {
+            foreach ($data['custom_' . $newssubscription_themes_field] as $theme) {
               $recipients[$theme][] = array(
                 'email' => $data['email'],
                 'first_name' => $data['first_name'],
@@ -215,7 +221,7 @@ function newssubscription_get_single_mail_data($node) {
   // Get afbeelding.
   $image = array();
   $field_items = field_get_items('node', $node, 'image');
-  if (!empty($field_items[0])) {
+  if (!empty($field_items[0]['uri'])) {
     $image = array(
       'uri' => $field_items[0]['uri'],
       'name' => check_plain($field_items[0]['filename']),
@@ -225,56 +231,42 @@ function newssubscription_get_single_mail_data($node) {
   // Get themes data.
   $themes = array();
   $field_items = field_get_items('node', $node, 'thema');
-  foreach ($field_items as $field_item) {
-    $theme_node = node_load($field_item['nid']);
-    $themes[] = array(
-      'title' => check_plain($theme_node->title),
-      'path' => drupal_get_path_alias('node/' . $theme_node->nid),
-    );
+  if (!empty($field_items)) {
+    foreach ($field_items as $field_item) {
+      $theme_node = node_load($field_item['nid']);
+      $themes[] = array(
+        'title' => check_plain($theme_node->title),
+        'path' => drupal_get_path_alias('node/' . $theme_node->nid),
+      );
+    }
   }
 
   // Get page sections data.
   $sections = array();
   $short_text = '';
-  foreach ($node->actualiteit_content['und'] as $field_item) {
-    $page_section_ids[] = $field_item['sid'];
-  }
-  $raw_sections = entity_load('page_section', $page_section_ids);
-  foreach ($raw_sections as $raw_section) {
-    switch ($raw_section->type) {
-      case 'quote':
-        break;
+  if (!empty($node->actualiteit_content['und'])) {
+    $page_section_ids = array();
+    foreach ($node->actualiteit_content['und'] as $field_item) {
+      $page_section_ids[] = $field_item['sid'];
+    }
+    if (!empty($page_section_ids)) {
+      $raw_sections = entity_load('page_section', $page_section_ids);
+      foreach ($raw_sections as $raw_section) {
+        switch ($raw_section->type) {
+          case 'quote':
+          break;
 
-      case 'quote_short':
-        $sections[] = array(
-          'type' => 'quote_short',
-          'value' => $raw_section->quote['und'][0]['safe_value'],
-        );
-        break;
-
-      case 'verhaal':
-        break;
-
-      case 'text':
-        $sections[] = array(
-          'type' => 'text',
-          'value' => $raw_section->body['und'][0]['safe_value'],
-        );
-        if (empty($short_text)) {
-          $short_text = $raw_section->body['und'][0]['safe_value'];
-        }
-        break;
-
-      case 'afbeelding':
-        if (in_array($raw_section->image_mode['und'][0]['value'], array(1, 5))) {
+          case 'quote_short':
           $sections[] = array(
-            'type' => 'afbeelding',
-            'path' => $raw_section->image['und'][0]['uri'],
-            'caption' => $raw_section->snippet['und'][0]['safe_value'],
-            'text' => $raw_section->body['und'][0]['safe_value'],
+            'type' => 'quote_short',
+            'value' => $raw_section->quote['und'][0]['safe_value'],
           );
-        }
-        if (!empty($raw_section->body)) {
+          break;
+
+          case 'verhaal':
+          break;
+
+          case 'text':
           $sections[] = array(
             'type' => 'text',
             'value' => $raw_section->body['und'][0]['safe_value'],
@@ -282,46 +274,73 @@ function newssubscription_get_single_mail_data($node) {
           if (empty($short_text)) {
             $short_text = $raw_section->body['und'][0]['safe_value'];
           }
+          break;
+
+          case 'afbeelding':
+          if (in_array($raw_section->image_mode['und'][0]['value'], array(1, 5))) {
+            if (!empty($raw_section->image['und'][0]['uri'])) {
+              $sections[] = array(
+                'type' => 'afbeelding',
+                'path' => $raw_section->image['und'][0]['uri'],
+                'caption' => empty($raw_section->snippet['und']) ? '' : $raw_section->snippet['und'][0]['safe_value'],
+                'text' => empty($raw_section->body['und']) ? '' : $raw_section->body['und'][0]['safe_value'],
+              );
+            }
+          }
+          if (!empty($raw_section->body)) {
+            $sections[] = array(
+              'type' => 'text',
+              'value' => $raw_section->body['und'][0]['safe_value'],
+            );
+            if (empty($short_text)) {
+              $short_text = $raw_section->body['und'][0]['safe_value'];
+            }
+          }
+          break;
+
+          case 'kader':
+          $sections[] = array(
+            'type' => 'kader',
+            'value' => $raw_section->body['und'][0]['safe_value'],
+          );
+          if (empty($short_text)) {
+            $short_text = $raw_section->body['und'][0]['safe_value'];
+          }
+          break;
+
+          case 'jaartal':
+          break;
+
+          case 'video':
+          // Video functionaliteit wordt niet meer gebruikt door communicatie.
+          break;
         }
-        break;
-
-      case 'kader':
-        $sections[] = array(
-          'type' => 'kader',
-          'value' => $raw_section->body['und'][0]['safe_value'],
-        );
-        if (empty($short_text)) {
-          $short_text = $raw_section->body['und'][0]['safe_value'];
-        }
-        break;
-
-      case 'jaartal':
-        break;
-
-      case 'video':
-        // Video functionaliteit wordt niet meer gebruikt door communicatie.
-        break;
+      }
     }
   }
 
   // Persons.
   $persons = array();
   $field_items = field_get_items('node', $node, 'persoon');
-  foreach ($field_items as $field_item) {
-    $person_node = node_load($field_item['nid']);
-    $persons[] = array(
-      'title' => check_plain($person_node->title),
-      'path' => drupal_get_path_alias('node/' . $person_node->nid),
-      'image_path' => !empty($person_node->image) ? $person_node->image['und'][0]['uri'] : '',
-    );
+  if (!empty($field_items)) {
+    foreach ($field_items as $field_item) {
+      $person_node = node_load($field_item['nid']);
+      $persons[] = array(
+        'title' => check_plain($person_node->title),
+        'path' => drupal_get_path_alias('node/' . $person_node->nid),
+        'image_path' => !empty($person_node->image['und'][0]['uri']) ? $person_node->image['und'][0]['uri'] : '',
+      );
+    }
   }
 
   // Shorten short_text to first or first two paragraphs.
-  $end = strpos($short_text, '</p>');
-  if ($end < 100) {
-    $end = strpos($short_text, '</p>', $end);
+  if (!empty($short_text)) {
+    $end = strpos($short_text, '</p>');
+    if ($end < 100) {
+      $end = strpos($short_text, '</p>', $end);
+    }
+    $short_text = substr($short_text, 0, $end + 4);
   }
-  $short_text = substr($short_text, 0, $end + 4);
 
   // Create data array for template.
   $data = array(
