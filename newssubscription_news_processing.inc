@@ -98,66 +98,74 @@ function newssubscription_get_news_nodes($type) {
 }
 
 function newssubscription_get_number_of_batches($type, $batch_size) {
+  $newssubscription_frequency_field = variable_get('newssubscription_frequency_field');
   $batches = 0;
-  $spcivi = \SPCivi::getInstance();
-  $type_translate = array(
-    'weekly_digest' => 'wekelijks',
-    'daily_digest' => 'dagelijks',
-    'direct_mail' => 'direct',
-  );
 
-  // Get total number of contacts for subscription type.
-  $query = array(
-    'sequential' => 1,
-    'custom_228' => $type_translate[$type],
-    'is_deceased' => 0,
-    'is_opt_out' => 0,
-    'is_deleted' => 0,
-  );
-  $result = $spcivi->api('Contact', 'getcount', $query);
-  if (newssubscription_process_civi_result($result, 'Fout bij het ophalen van totaal aantal ontvangers (type: ' . $type_translate[$type] . ') uit CiviCRM.') === FALSE) {
-    return FALSE;
-  }
-  $total_recipients = $result['result'];
+  if (!empty($newssubscription_frequency_field)) {
+    $spcivi = \SPCivi::getInstance();
+    $type_translate = array(
+      'weekly_digest' => 'wekelijks',
+      'daily_digest' => 'dagelijks',
+      'direct_mail' => 'direct',
+    );
 
-  if ($total_recipients) {
-    // Get news recipients by batch.
-    $batches = ceil($total_recipients / $batch_size);
+    // Get total number of contacts for subscription type.
+    $query = array(
+      'sequential' => 1,
+      'custom_' . $newssubscription_frequency_field => $type_translate[$type],
+      'is_deceased' => 0,
+      'is_opt_out' => 0,
+      'is_deleted' => 0,
+    );
+    $result = $spcivi->api('Contact', 'getcount', $query);
+    if (newssubscription_process_civi_result($result, 'Fout bij het ophalen van totaal aantal ontvangers (type: ' . $type_translate[$type] . ') uit CiviCRM.') === FALSE) {
+      return FALSE;
+    }
+    $total_recipients = $result['result'];
+
+    if ($total_recipients) {
+      // Get news recipients by batch.
+      $batches = ceil($total_recipients / $batch_size);
+    }
   }
   return $batches;
 }
 
 function newssubscription_get_news_recipients($type, $batch_size, $batch, &$recipients) {
-  $spcivi = \SPCivi::getInstance();
-  $type_translate = array(
-    'weekly_digest' => 'wekelijks',
-    'daily_digest' => 'dagelijks',
-    'direct_mail' => 'direct',
-  );
+  $newssubscription_frequency_field = variable_get('newssubscription_frequency_field');
+  $newssubscription_themes_field = variable_get('newssubscription_themes_field');
+  if (!empty($newssubscription_frequency_field) && !empty($newssubscription_themes_field)) {
+    $spcivi = \SPCivi::getInstance();
+    $type_translate = array(
+      'weekly_digest' => 'wekelijks',
+      'daily_digest' => 'dagelijks',
+      'direct_mail' => 'direct',
+    );
 
-  $query = array(
-    'sequential' => 1,
-    'return' => "custom_227,display_name,email,first_name",
-    'custom_228' => array($type_translate[$type]),
-    'is_deceased' => 0,
-    'is_opt_out' => 0,
-    'is_deleted' => 0,
-    'options' => array(
-      'limit' => $batch_size,
-      'offset' => $batch * $batch_size
-    ),
-  );
-  $result = $spcivi->api('Contact', 'get', $query);
-  if (newssubscription_process_civi_result($result, 'Fout bij het ophalen van een batch ontvangers (type: ' . $type_translate[$type] . ') uit CiviCRM.')) {
-    if ($result[values]) {
-      foreach ($result['values'] as $data) {
-        if ($data['custom_227']) {
-          foreach ($data['custom_227'] as $theme) {
-            $recipients[$theme][] = array(
-              'email' => $data['email'],
-              'first_name' => $data['first_name'],
-              'display_name' => $data['display_name'],
-            );
+    $query = array(
+      'sequential' => 1,
+      'return' => "custom_" . $newssubscription_themes_field . ",display_name,email,first_name",
+      'custom_' $newssubscription_frequency_field => array($type_translate[$type]),
+      'is_deceased' => 0,
+      'is_opt_out' => 0,
+      'is_deleted' => 0,
+      'options' => array(
+        'limit' => $batch_size,
+        'offset' => $batch * $batch_size
+      ),
+    );
+    $result = $spcivi->api('Contact', 'get', $query);
+    if (newssubscription_process_civi_result($result, 'Fout bij het ophalen van een batch ontvangers (type: ' . $type_translate[$type] . ') uit CiviCRM.')) {
+      if ($result[values]) {
+        foreach ($result['values'] as $data) {
+          if ($data['custom_' . $newssubscription_themes_field]) {
+            foreach ($data['custom_' $newssubscription_themes_field] as $theme) {
+              $recipients[$theme][] = array(
+                'email' => $data['email'],
+                'first_name' => $data['first_name'],
+                'display_name' => $data['display_name'],
+              );
+            }
           }
         }
       }
