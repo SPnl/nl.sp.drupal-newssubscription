@@ -28,6 +28,7 @@ function newssubscription_menu() {
   foreach ($form_names as $form_name) {
     $settings_callback = 'newssubscription_' . $form_name . '_settings';
     $path_name = $settings_callback('path_name');
+    $path_arguments = $settings_callback('path_arguments');
     $form_title = $settings_callback('form_title');
     $items[$path_name] = array(
       'title' => $form_title,
@@ -37,6 +38,10 @@ function newssubscription_menu() {
       'file' => 'newssubscription_form.inc',
       'access callback' => TRUE,
     );
+    // Add arguments to form callback.
+    foreach ($path_arguments as $key => $path_argument) {
+      $items[$path_name]['page arguments'][] = $key + 2;
+    }
     // Optionally set user access permissions.
     if (!empty($settings_callback('permissions'))) {
       $items[$path_name]['access callback'] = 'user_access';
@@ -87,6 +92,15 @@ function newssubscription_menu() {
     'file'            => 'newssubscription_page_actions.inc',
   ];
 
+  $items['nieuwsaanmelding/afmelden/%'] = [
+    'title'           => 'Afmelden SP nieuws',
+    'type'            => MENU_CALLBACK,
+    'page callback'   => 'newssubscription_unsubscribe',
+    'page arguments'  => [2],
+    'access callback' => TRUE,
+    'file'            => 'newssubscription_news_processing.inc',
+  ];
+
   return $items;
 }
 
@@ -101,8 +115,8 @@ function newssubscription_menu() {
  * @return array
  *   Drupal form render array.
  */
-function newssubscription_get_form($form_callback, $form_name) {
-  return drupal_get_form($form_callback, $form_name);
+function newssubscription_get_form($form_callback, $form_name, $arg1 = NULL, $arg2 = NULL, $arg3 = NULL, $arg4 = NULL) {
+  return drupal_get_form($form_callback, $form_name, $arg1, $arg2, $arg3, $arg4);
 }
 
 function newssubscription_access() {
@@ -119,7 +133,7 @@ function newssubscription_access() {
 function newssubscription_cron() {
 
   $lastrun = variable_get('newssubscription_cron_lastrun');
-  if ($lastrun < (time() - 3600)) {
+  if (TRUE || $lastrun < (time() - 3600)) {
     variable_set('newssubscription_cron_lastrun', time());
     newssubscription_submit_pending();
     newssubscription_send_reminders();

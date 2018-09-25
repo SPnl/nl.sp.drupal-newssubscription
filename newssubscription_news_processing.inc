@@ -1,20 +1,5 @@
 <?php
 
-function newssubscription_send_news_mail($news_to_send) {
-  if ($news_to_send) {
-    foreach ($news_to_send as $news_message_data) {
-      $nodes = node_load_multiple($news_message_data['node_ids']);
-      $content = newssubscription_get_mail_content($nodes);
-
-      $to = $news_message_data['display_name'] . ' <' . $news_message_data['email'] . '>';
-      $language = language_default();
-
-      $from = variable_get('site_mail', ini_get('sendmail_from'));
-      drupal_mail('newssubscription', 'new-content-message', $to, $language, $content, $from, TRUE);
-    }
-  }
-}
-
 function newssubscription_send_news() {
   $batch_size = 1000;
   // Weekly digest (sunday = 0, monday = 1 etc.).
@@ -43,29 +28,50 @@ function newssubscription_send_news_by_type($type, $batch_size) {
         newssubscription_get_news_recipients($type, $batch_size, $batch, $recipients);
         if ($recipients) {
           // Create send data..
-          foreach ($themes as $theme) {
-            if (!empty($recipients[$theme])) {
-              foreach ($recipients[$theme] as $recipient) {
+          foreach ($recipients as $recipient) {
+            $recipient_nodes = array();
+            if (!empty($recipient['themes'])) {
+              foreach ($recipient['themes'] as $theme) {
                 if (!empty($nodes[$theme])) {
-                  if (empty($news_to_send_data[$recipient['email']]['email'])) {
-                    $news_to_send_data[$recipient['email']] = array(
-                      'node_ids' => array(),
-                      'first_name' => empty($recipient['firstname']) ? '' : $recipient['first_name'],
-                      'display_name' => $recipient['display_name'],
-                      'email' => $recipient['email'],
-                    );
-                  }
-                  // Add nodes.
-                  $news_to_send_data[$recipient['email']]['node_ids'] = array_merge($news_to_send_data[$recipient['email']]['node_ids'], $nodes[$theme]);
+                  $recipient_nodes = array_merge($recipient_nodes, $nodes[$theme]);
                 }
               }
+              $news_to_send_data[$recipient['email']] = array(
+                'node_ids' => $recipient_nodes,
+                'first_name' => empty($recipient['firstname']) ? '' : $recipient['first_name'],
+                'display_name' => $recipient['display_name'],
+                'email' => $recipient['email'],
+                'contact_id' => $recipient['contact_id'],
+              );
             }
           }
-          if ($news_to_send_data) {
+          if (!empty($news_to_send_data)) {
             newssubscription_send_news_mail($news_to_send_data);
           }
         }
       }
+    }
+  }
+}
+
+function newssubscription_send_news_mail($news_to_send) {
+  if ($news_to_send) {
+    foreach ($news_to_send as $news_message_data) {
+      $nodes = node_load_multiple($news_message_data['node_ids']);
+      $content = newssubscription_get_mail_content($nodes);
+      $name = empty($news_message_data['first_name']) ? $news_message_data['display_name'] : $news_message_data['first_name'];
+      $mail_data = array(
+        'subject' => $content['subject'],
+        'content' => $content['content'],
+        'name' => $name,
+        'encoded_id' => newssubscription_encode($news_message_data['contact_id']),
+      );
+
+      $to = $news_message_data['display_name'] . ' <' . $news_message_data['email'] . '>';
+      $language = language_default();
+
+      $from = variable_get('site_mail', ini_get('sendmail_from'));
+      drupal_mail('newssubscription', 'new-content-message', $to, $language, $mail_data, $from, TRUE);
     }
   }
 }
@@ -150,7 +156,7 @@ function newssubscription_get_news_recipients($type, $batch_size, $batch, &$reci
 
     $query = array(
       'sequential' => 1,
-      'return' => "custom_" . $newssubscription_themes_field . ",display_name,email,first_name",
+      'return' => "custom_" . $newssubscription_themes_field . ",display_name,email,first_name,id",
       'custom_' . $newssubscription_frequency_field => array($type_translate[$type]),
       'is_deceased' => 0,
       'is_opt_out' => 0,
@@ -165,13 +171,13 @@ function newssubscription_get_news_recipients($type, $batch_size, $batch, &$reci
       if ($result['values']) {
         foreach ($result['values'] as $data) {
           if ($data['custom_' . $newssubscription_themes_field]) {
-            foreach ($data['custom_' . $newssubscription_themes_field] as $theme) {
-              $recipients[$theme][] = array(
-                'email' => $data['email'],
-                'first_name' => $data['first_name'],
-                'display_name' => $data['display_name'],
-              );
-            }
+            $recipients[$data['email']] = array(
+              'email' => $data['email'],
+              'first_name' => $data['first_name'],
+              'display_name' => $data['display_name'],
+              'contact_id' => $data['id'],
+              'themes' => $data['custom_' . $newssubscription_themes_field],
+            );
           }
         }
       }
@@ -367,8 +373,11 @@ function newssubscription_get_digest_mail_data($nodes) {
  * Defines e-mail.
  */
 function newssubscription_get_new_content_mail(&$message, $params) {
+  global $base_url;
+  $name = $params['name'];
   $message['subject'] = $params['subject'];
   $message['body'][] = $params['content'];
+  $message['body'][] = '<p><a href="' . $base_url . '/nieuwsaanmelding/afmelden/' . $params['encoded_id'] . '">Afmelden SP nieuws</a> | <a href="' . $base_url . '/nieuwsaanmelding/aanmelden/' . $params['encoded_id'] . '"> Wijzigen nieuwsaanmeldingen</a></p>';
 }
 
 function newssubscription_send_reminders() {
@@ -403,4 +412,51 @@ function newssubscription_send_reminders() {
       }
     }
   }
+}
+
+function newssubscription_encode($data, $serialize = FALSE) {
+  if ($serialize) {
+    $data = serialize($data);
+  }
+  $key = variable_get('newssubscription_secret', 'paijeich6zoh4Mah');
+  $encrypted = openssl_encrypt($data, 'AES-128-ECB', $key);
+  $hash = base64_encode($encrypted);
+  return $hash;
+}
+
+function newssubscription_decode($hash, $unserialize = FALSE) {
+  $decoded = base64_decode($hash);
+  $key = variable_get('newssubscription_secret', 'paijeich6zoh4Mah');
+  $data = openssl_decrypt($decoded, 'AES-128-ECB', $key);
+  if ($unserialize) {
+    $data = unserialize($data);
+  }
+  return $data;
+}
+
+function newssubscription_unsubscribe($hash) {
+  $contact_id = newssubscription_decode($hash);
+  if (ctype_digit(strval($contact_id))) {
+    $newsletter_field = variable_get('newssubscription_newsletter_field');
+    $themes_field = variable_get('newssubscription_themes_field');
+    $frequency_field = variable_get('newssubscription_frequency_field');
+
+    $spcivi = \SPCivi::getInstance();
+
+    // Unsubscribe.
+    $params = array(
+      'sequential' => 1,
+      'contact_type' => 'Individual',
+      'id' => $contact_id,
+      'custom_229' => '',
+      'custom_227' => '',
+      'custom_228' => '',
+    );
+    $result = $spcivi->api('Contact', 'create', $params);
+    if (!newssubscription_process_civi_result($result, 'Fout bij het verwijderen van een nieuwsaanmelding in CiviCRM.') === FALSE) {
+      return '<p>Uw nieuwsaanmelding is verwijderd.</p>';
+    }
+  }
+  drupal_set_message('Er is iets misgegaan met het aanpassen van uw nieuwsaanmeling in ons systeem', 'error');
+  return '<p>Probeert u het op een later moment nog eens.</p>';
 }

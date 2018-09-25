@@ -36,6 +36,9 @@
 function newssubscription_subscribe_settings($variable_name) {
   $settings = array(
     'path_name' => 'nieuwsaanmelding/aanmelden',
+    'path_arguments' => array(
+      'hash',
+    ),
     'form_title' => 'Aanmelden voor nieuws',
     'no_nav_pages' => array(
       'thanks',
@@ -57,7 +60,7 @@ function newssubscription_subscribe_settings($variable_name) {
 /**
  * Form definition for start page.
  */
-function newssubscription_subscribe_page_start_form(&$form, &$form_state) {
+function newssubscription_subscribe_page_start_form(&$form, &$form_state, $arg1 = NULL, $arg2 = NULL, $arg3 = NULL, $arg4 = NULL) {
   // Check if settigns are ok.
   if (
     empty(variable_get('newssubscription_newsletter_field')) ||

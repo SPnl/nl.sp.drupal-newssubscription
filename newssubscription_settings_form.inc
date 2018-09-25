@@ -16,6 +16,18 @@ function newssubscription_settings_form($form, &$form_state) {
     '#default_value' => variable_get('newssubscription_active', NULL),
   );
 
+  $secret_default = variable_get('newssubscription_secret', NULL);
+  $form['newssubscription_general_settings']['newssubscription_secret'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Nieuwsaanmelding secret',
+    '#description' => 'Wachtwoord dat wordt gebruikt om uitschrijf link te encoden / decoden.',
+    '#default_value' => $secret_default,
+  );
+
+  if (!empty($secret_default)) {
+    $form['newssubscription_general_settings']['newssubscription_secret']['#attributes']['disabled'] = TRUE;
+  }
+
   // Civicrm settings.
   $form['newssubscription_civicrm_settings'] = array(
     '#type' => 'fieldset',

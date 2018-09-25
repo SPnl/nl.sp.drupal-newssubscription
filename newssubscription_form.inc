@@ -8,11 +8,49 @@
 /**
  * Form constructor for the member form.
  */
-function newssubscription_form($form, &$form_state, $form_name) {
+function newssubscription_form($form, &$form_state, $form_name, $arg1 = NULL, $arg2 = NULL, $arg3 = NULL, $arg4 = NULL) {
+  $values = array();
+  $storage = array();
   $values = isset($form_state['values']) ? $form_state['values'] : array();
-
   $sid = empty($form_state['storage']['sid']) ? NULL : $form_state['storage']['sid'];
-  $storage = newssubscription_get_storage($sid, $form_name);
+
+  // Get storage from CiviCRM when hash.
+  if (empty($arg1) || !empty($values)) {
+    $storage = newssubscription_get_storage($sid, $form_name);
+  }
+  else {
+    $hash = $arg1;
+    $contact_id = newssubscription_decode($hash);
+    if (ctype_digit(strval($contact_id))) {
+      $newsletter_field = variable_get('newssubscription_newsletter_field');
+      $themes_field = variable_get('newssubscription_themes_field');
+      $frequency_field = variable_get('newssubscription_frequency_field');
+      $spcivi = \SPCivi::getInstance();
+      // Get total number of contacts for subscription type.
+      $query = array(
+        'sequential' => 1,
+        'id' => $contact_id,
+        'return' => 'custom_' . $newsletter_field . ',custom_' . $themes_field . ',custom_' . $frequency_field . ',display_name,email',
+      );
+      $result = $spcivi->api('Contact', 'get', $query);
+      if (newssubscription_process_civi_result($result, 'Fout bij het ophalen van een contact uit CiviCRM.') === FALSE) {
+        drupal_set_message('Er is iets misgegaan bij het ophalen van je gegevens, probeer het op een later moment nog eens.', 'error');
+        return;
+      }
+      if (!empty($result['values'])) {
+        $data = array_shift($result['values']);
+        $storage['values']['start']['page_start_name'] = empty($data['display_name']) ? '' : $data['display_name'];
+        $storage['values']['start']['page_start_email'] = empty($data['email']) ? '' : $data['email'];
+        $storage['values']['select']['page_select_newsletter'] = empty($data['custom_' . $newsletter_field]) ? array() : array('newsletter' => 'newsletter');
+        $storage['values']['select']['page_select_frequence'] = empty($data['custom_' . $frequency_field]) ? '' : $data['custom_' . $frequency_field];
+        $default_themes = array();
+        foreach ($data['custom_' . $themes_field] as $theme) {
+          $default_themes[$theme] = $theme;
+        }
+        $storage['values']['select']['page_select_themes'] = $default_themes;
+      }
+    }
+  }
 
   // Store storage data in form.
   $form_state['storage'] = $storage;
@@ -115,7 +153,7 @@ function newssubscription_form($form, &$form_state, $form_name) {
   if (function_exists($form_callback)) {
 
     // Add page specific form elements.
-    $form_callback($form, $form_state);
+    $form_callback($form, $form_state, $arg1, $arg2, $arg3, $arg4);
 
     // Modify form elements (Add default values, error messages, rebuild required functionality).
     foreach ($form as $key => $item) {
@@ -124,7 +162,7 @@ function newssubscription_form($form, &$form_state, $form_name) {
   }
 
   // Add action buttons.
-  if ($storage['current_page'] !== $storage['feedback_page'] && !empty($storage['previous_page']) && !in_array($storage['current_page'], $storage['no_nav_pages']) && count($form_state['storage']['nav_history']) > 2)  {
+  if ($storage['current_page'] !== $storage['feedback_page'] && !empty($storage['previous_page']) && !in_array($storage['current_page'], $storage['no_nav_pages']))  {
     $form['action']['previous_page'] = array(
       '#type' => 'submit',
       '#value' => 'Terug',
