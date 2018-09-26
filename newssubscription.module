@@ -132,15 +132,17 @@ function newssubscription_access() {
  */
 function newssubscription_cron() {
 
-  $lastrun = variable_get('newssubscription_cron_lastrun');
-  if (TRUE || $lastrun < (time() - 3600)) {
-    variable_set('newssubscription_cron_lastrun', time());
-    newssubscription_submit_pending();
-    newssubscription_send_reminders();
-  }
-  $active = variable_get('newssubscription_active', NULL);
-  if ($active) {
-    newssubscription_send_news();
+  if (variable_get('newssubscription_active') == 1) {
+    $lastrun = variable_get('newssubscription_cron_lastrun');
+    if ($lastrun < (time() - 3600)) {
+      variable_set('newssubscription_cron_lastrun', time());
+      newssubscription_submit_pending();
+      newssubscription_send_reminders();
+    }
+    $active = variable_get('newssubscription_active', NULL);
+    if ($active) {
+      newssubscription_send_news();
+    }
   }
 }
 

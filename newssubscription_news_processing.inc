@@ -22,7 +22,6 @@ function newssubscription_send_news_by_type($type, $batch_size) {
     $batches = newssubscription_get_number_of_batches($type, $batch_size);
     if ($batches) {
       $recipients = array();
-      $themes = array_keys(newssubscription_get_themes_list());
       for ($batch = 0; $batch < $batches; $batch++) {
         $recipients = array();
         newssubscription_get_news_recipients($type, $batch_size, $batch, $recipients);
@@ -36,13 +35,15 @@ function newssubscription_send_news_by_type($type, $batch_size) {
                   $recipient_nodes = array_merge($recipient_nodes, $nodes[$theme]);
                 }
               }
-              $news_to_send_data[$recipient['email']] = array(
-                'node_ids' => $recipient_nodes,
-                'first_name' => empty($recipient['firstname']) ? '' : $recipient['first_name'],
-                'display_name' => $recipient['display_name'],
-                'email' => $recipient['email'],
-                'contact_id' => $recipient['contact_id'],
-              );
+              if (!empty($recipient_nodes)) {
+                $news_to_send_data[$recipient['email']] = array(
+                  'node_ids' => $recipient_nodes,
+                  'first_name' => empty($recipient['firstname']) ? '' : $recipient['first_name'],
+                  'display_name' => $recipient['display_name'],
+                  'email' => $recipient['email'],
+                  'contact_id' => $recipient['contact_id'],
+                );
+              }
             }
           }
           if (!empty($news_to_send_data)) {
@@ -83,15 +84,14 @@ function newssubscription_get_news_nodes($type) {
 
   $theme_nids = newssubscription_get_themes_nids();
 
-  $last_send_message_creation_date = variable_get('newssubscription_' . $type . '_last_creation_date', variable_get('newssubscription_active_date', time()));
-  $last_created = $last_send_message_creation_date;
+  $since_date = max(variable_get('newssubscription_' . $type . '_last_creation_date'), variable_get('newssubscription_active_date', time()));
 
   foreach ($theme_nids as $theme => $theme_nid) {
     // TODO: filter publication nodes that have parent node.
-    $query = "SELECT nid, created FROM field_data_thema t INNER JOIN node n ON t.entity_id = n.nid WHERE type IN (" . $type_filter . ") AND thema_nid = :theme_nid AND created > :last_send_message_creation_date";
+    $query = "SELECT nid, created FROM field_data_thema t INNER JOIN node n ON t.entity_id = n.nid WHERE type IN (" . $type_filter . ") AND thema_nid = :theme_nid AND created > :since_date";
     $result = db_query($query, array(
       ':theme_nid' => $theme_nid,
-      ':last_send_message_creation_date' => $last_send_message_creation_date,
+      ':since_date' => $since_date,
     ));
     if ($result) {
       while ($row = $result->fetchAssoc()) {
@@ -190,7 +190,7 @@ function newssubscription_get_mail_content($nodes) {
 
   if (count($nodes) === 1) {
     // Create content for single article mail.
-    $node = array_pop($nodes);
+    $node = current($nodes);
     $types = nu_get_types();
     $names = array_combine($types, array(
       'nieuwsbericht',
@@ -202,15 +202,17 @@ function newssubscription_get_mail_content($nodes) {
       'achtergrond',
     ));
     $subject = 'SP ' . ucfirst($names[$node->type]) . ': ' . check_plain($node->title);
-    $variables = newssubscription_get_single_mail_data($node);
-    $html = theme('newssubscription_theme_mail_single', $variables);
+    //$variables = newssubscription_get_single_mail_data($node);
+    $variables = newssubscription_get_digest_mail_data($nodes);
+    //$html = theme('newssubscription_theme_mail_single', $variables);
+    $html = theme('newssubscription_theme_mail_digest', $variables);
     $mail_content = array(
       'subject' => $subject,
       'content' => $html,
     );
   }
   elseif (count($nodes) > 1) {
-    // Create content for digest  mail.
+    // Create content for digest mail.
     $variables = newssubscription_get_digest_mail_data($nodes);
     $html = theme('newssubscription_theme_mail_digest', $variables);
     $mail_content = array(
