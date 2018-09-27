@@ -55,7 +55,7 @@ function newssubscription_menu() {
     'type'             => MENU_NORMAL_ITEM,
     'page callback'    => 'drupal_get_form',
     'page arguments'   => ['newssubscription_settings_form'],
-    'access callback'  => 'newssubscription_access',
+    'access arguments' => array('access administration pages'),
     'file'             => 'newssubscription_settings_form.inc',
   ];
 
@@ -63,7 +63,7 @@ function newssubscription_menu() {
     'title'            => 'Nieuwsaanmeldinstellingen',
     'description'      => 'Instellingen voor nieuwsaanmeldingen',
     'type'             => MENU_DEFAULT_LOCAL_TASK,
-    'access callback'  => 'newssubscription_access',
+    'access arguments' => array('access administration pages'),
   ];
 
   $items['admin/config/sp/nieuwsaanmeldingen/test'] = [
@@ -71,7 +71,7 @@ function newssubscription_menu() {
     'type'             => MENU_LOCAL_TASK,
     'page callback'    => 'drupal_get_form',
     'page arguments'   => ['newssubscription_test_form'],
-    'access callback'  => 'newssubscription_access',
+    'access arguments' => array('access administration pages'),
     'file'             => 'newssubscription_test_form.inc',
   ];
 
@@ -117,14 +117,6 @@ function newssubscription_menu() {
  */
 function newssubscription_get_form($form_callback, $form_name, $arg1 = NULL, $arg2 = NULL, $arg3 = NULL, $arg4 = NULL) {
   return drupal_get_form($form_callback, $form_name, $arg1, $arg2, $arg3, $arg4);
-}
-
-function newssubscription_access() {
-  global $user;
-  if (in_array('administrator', $user->roles)) {
-    return TRUE;
-  }
-  return FALSE;
 }
 
 /**
