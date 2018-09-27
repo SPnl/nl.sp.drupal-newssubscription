@@ -42,6 +42,7 @@ function newssubscription_send_news_by_type($type, $batch_size) {
                   'display_name' => $recipient['display_name'],
                   'email' => $recipient['email'],
                   'contact_id' => $recipient['contact_id'],
+                  'type' => $type,
                 );
               }
             }
@@ -59,8 +60,8 @@ function newssubscription_send_news_mail($news_to_send) {
   if ($news_to_send) {
     foreach ($news_to_send as $news_message_data) {
       $nodes = node_load_multiple($news_message_data['node_ids']);
-      $content = newssubscription_get_mail_content($nodes);
       $name = empty($news_message_data['first_name']) ? $news_message_data['display_name'] : $news_message_data['first_name'];
+      $content = newssubscription_get_mail_content($nodes, $type, $name);
       $mail_data = array(
         'subject' => $content['subject'],
         'content' => $content['content'],
@@ -185,8 +186,14 @@ function newssubscription_get_news_recipients($type, $batch_size, $batch, &$reci
   }
 }
 
-function newssubscription_get_mail_content($nodes) {
+function newssubscription_get_mail_content($nodes, $type, $name) {
   $mail_content = array();
+
+  $typenames = array(
+    'daily_digest' => 'dagelijks overzicht ',
+    'weekly_digest' => 'wekelijks overzicht ',
+    'direct_mail' => '',
+  );
 
   if (count($nodes) === 1) {
     // Create content for single article mail.
@@ -201,9 +208,9 @@ function newssubscription_get_mail_content($nodes) {
       'video',
       'achtergrond',
     ));
-    $subject = 'SP ' . ucfirst($names[$node->type]) . ': ' . check_plain($node->title);
+    $subject = ucfirst($typenames[$type]) . 'SP nieuws: "' . check_plain($node->title) . '"';
     //$variables = newssubscription_get_single_mail_data($node);
-    $variables = newssubscription_get_digest_mail_data($nodes);
+    $variables = newssubscription_get_digest_mail_data($nodes, $type, $name);
     //$html = theme('newssubscription_theme_mail_single', $variables);
     $html = theme('newssubscription_theme_mail_digest', $variables);
     $mail_content = array(
@@ -213,17 +220,17 @@ function newssubscription_get_mail_content($nodes) {
   }
   elseif (count($nodes) > 1) {
     // Create content for digest mail.
-    $variables = newssubscription_get_digest_mail_data($nodes);
+    $variables = newssubscription_get_digest_mail_data($nodes, $type, $name);
     $html = theme('newssubscription_theme_mail_digest', $variables);
     $mail_content = array(
-      'subject' => 'SP nieuws update',
+      'subject' => ucfirst($typenames[$type]) . 'SP nieuws',
       'content' => $html,
     );
   }
   return $mail_content;
 }
 
-function newssubscription_get_single_mail_data($node) {
+function newssubscription_get_single_mail_data($node, $type, $name) {
   $data = array();
 
   // Get afbeelding.
@@ -307,6 +314,7 @@ function newssubscription_get_single_mail_data($node) {
           break;
 
           case 'kader':
+          /*
           $sections[] = array(
             'type' => 'kader',
             'value' => $raw_section->body['und'][0]['safe_value'],
@@ -314,6 +322,7 @@ function newssubscription_get_single_mail_data($node) {
           if (empty($short_text)) {
             $short_text = $raw_section->body['und'][0]['safe_value'];
           }
+          */
           break;
 
           case 'jaartal':
@@ -341,13 +350,31 @@ function newssubscription_get_single_mail_data($node) {
     }
   }
 
-  // Shorten short_text to first or first two paragraphs.
+  // Shorten short_text.
   if (!empty($short_text)) {
-    $end = strpos($short_text, '</p>');
-    if ($end < 100) {
-      $end = strpos($short_text, '</p>', $end);
+    $max_length = 200;
+    $first_paragraph_position = max(strpos($short_text, '</p>'), strpos($short_text, '</P>'));
+    if ($first_paragraph_position === FALSE) {
+      $short_text = substr(drupal_html_to_text($short_text), 0, $max_length);
     }
-    $short_text = substr($short_text, 0, $end + 4);
+    else {
+      $short_text = substr(drupal_html_to_text(substr($short_text, 0, $first_paragraph_position + 1)), 0, $max_length);
+    }
+
+    // Find last line.
+    $end = max(strrpos($short_text, '.'), strrpos($short_text, '?'), strrpos($short_text, '!'));
+    if ($end !== FALSE && $end > ($max_length / 2)) {
+      $short_text = substr($short_text, 0, $end + 1);
+    }
+    else {
+      $end = strrpos($short_text, ' ');
+      if ($end !== FALSE) {
+        $short_text = substr($short_text, 0, $end + 1) . ' ...';
+      }
+      else {
+        $short_text = substr($short_text, 0, $max_length);
+      }
+    }
   }
 
   // Create data array for template.
@@ -359,15 +386,19 @@ function newssubscription_get_single_mail_data($node) {
     'short_text' => $short_text,
     'sections' => $sections,
     'persons' => $persons,
+    'type' => $type,
+    'name' => $name,
   );
   return $data;
 }
 
-function newssubscription_get_digest_mail_data($nodes) {
+function newssubscription_get_digest_mail_data($nodes, $type, $name) {
   $data = array();
   foreach ($nodes as $node) {
-    $data['items'][] = newssubscription_get_single_mail_data($node);
+    $data['items'][] = newssubscription_get_single_mail_data($node, $type, $name);
   }
+  $data['type'] = $type;
+  $data['name'] = $name;
   return $data;
 }
 
@@ -379,7 +410,6 @@ function newssubscription_get_new_content_mail(&$message, $params) {
   $name = $params['name'];
   $message['subject'] = $params['subject'];
   $message['body'][] = $params['content'];
-  $message['body'][] = '<p><a href="' . $base_url . '/nieuwsaanmelding/afmelden/' . $params['encoded_id'] . '">Afmelden SP nieuws</a> | <a href="' . $base_url . '/nieuwsaanmelding/aanmelden/' . $params['encoded_id'] . '"> Wijzigen nieuwsaanmeldingen</a></p>';
 }
 
 function newssubscription_send_reminders() {

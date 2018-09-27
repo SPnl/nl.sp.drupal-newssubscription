@@ -175,7 +175,7 @@ function newssubscription_theme($existing, $type, $theme, $path) {
   if ($type == 'module') {
     return array(
       'newssubscription_theme_mail_single' => array(
-        'variables' => array('title' => NULL, 'themes' => NULL, 'sections'=>NULL, 'persons' => NULL, 'links' => NULL),
+        'variables' => array('title' => NULL, 'image' => NULL, 'themes' => NULL, 'short_text' => NULL, 'sections'=>NULL, 'persons' => NULL, 'links' => NULL),
         'template' => 'newssubscription-mail-single'
       ),
       'newssubscription_theme_mail_digest' => array(

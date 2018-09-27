@@ -2,8 +2,12 @@
   /*
    * Available variables:
    *
+   * $type
+   * $name
    * $items
    *   - [nr]
+   *     type
+   *     name
    *     title
    *     image
    *     - uri
@@ -28,21 +32,36 @@
    *
    */
 ?>
+<?php $typenames = array('daily_digest' => 'Dagelijks overzicht', 'weekly_digest' => 'Wekelijks overzicht', 'direct_mail' => ''); ?>
+<h1 color="black" style="color: black"><?php print $typenames[$type]; ?> SP nieuws</h1>
 <?php foreach ($items as $item): ?>
-<h1><?php print $item['title']; ?></h1>
-<?php if (!empty($item['image']['uri'])) : ?>
-<?php print theme_image_style(array('style_name' => 'actualiteit_item_crop_480_480', 'path' => $item['image']['uri'], 'width' => 200, 'height' => 200)); ?>
-<?php endif; ?>
-<?php $theme_titles = array(); ?>
-<?php foreach ($item['themes'] as $theme) : ?>
-  <?php $theme_titles[] = $theme['title']; ?>
-<?php endforeach; ?>
-<p><?php print implode(',', $theme_titles); ?></p>
-<?php print $item['short_text']; ?>
-<p><a href="https://www.sp.nl/<?php print $item['path']; ?>">Lees verder</a></p>
-<?php foreach ($item['persons'] as $person) : ?>
-<?php if (!empty($person['image_path'])) : ?>
-<a href="https://www.sp.nl/<?php print $person['path']; ?>"><?php print theme_image_style(array('style_name' => 'actualiteit_item_crop_480_480', 'path' => $person['image_path'], 'width' => 200, 'height' => 200)); ?></a>
-<?php endif; ?>
-<?php endforeach; ?>
+    <table width="600" style="width: 600px">
+      <tr>
+        <td width="180" height="180" style="width: 180px; height: 180px; padding: 0">
+          <?php if (!empty($item['image']['uri'])) : ?>
+            <a  style="text-decoration: none" href="<?php global $base_url; print $base_url . '/' . $item['path']; ?>">
+              <img src="<?php print image_style_url('mail_crop_180_180', $item['image']['uri']); ?>" />
+            </a>
+          <?php endif; ?>
+        </td>
+        <td width="10" style="width: 10px; padding: 0"></td>
+        <td valign="top" style="padding: 0">
+          <table width="400" height="180" style="width: 400px; height: 180px">
+            <tr height="10" style="height: 10px">
+              <td align="left" valign="top" style="vertical-align: top; padding: 0">
+                <a  style="text-decoration: none" href="<?php global $base_url; print $base_url . '/' . $item['path']; ?>">
+                  <h1 style="margin: 0"><?php print $item['title']; ?></h1>
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td align="left" valign="top" style="vertical-align: top; padding: 0">
+                <p style="margin: 0"><?php print $item['short_text']; ?></p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+    <table heigth="13" style="height: 13px"><tr><td></td></tr></table>
 <?php endforeach; ?>
