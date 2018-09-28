@@ -27,7 +27,7 @@
    */
 ?>
 <h1><?php print $title; ?></h1>
-<?php print theme_image_style(array('style_name' => 'actualiteit_item_crop_480_480', 'path' => $image['uri'], 'width' => 200, 'height' => 200)); ?>
+<img src="<?php print image_style_url(variable_get('newssubscription_thumb_image_style'), $item['image']['uri']); ?>" />
 <?php foreach ($themes as $theme) : ?>
   <?php $theme_titles[] = $theme['title']; ?>
 <?php endforeach; ?>

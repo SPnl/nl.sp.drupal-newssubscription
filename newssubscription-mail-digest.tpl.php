@@ -40,7 +40,7 @@
         <td width="180" height="180" style="width: 180px; height: 180px; padding: 0">
           <?php if (!empty($item['image']['uri'])) : ?>
             <a  style="text-decoration: none" href="<?php global $base_url; print $base_url . '/' . $item['path']; ?>">
-              <img src="<?php print image_style_url('mail_crop_180_180', $item['image']['uri']); ?>" />
+              <img src="<?php print image_style_url(variable_get('newssubscription_thumb_image_style'), $item['image']['uri']); ?>" />
             </a>
           <?php endif; ?>
         </td>

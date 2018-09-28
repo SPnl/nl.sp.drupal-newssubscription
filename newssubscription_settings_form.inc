@@ -16,6 +16,15 @@ function newssubscription_settings_form($form, &$form_state) {
     '#default_value' => variable_get('newssubscription_active', NULL),
   );
 
+  $image_styles = image_style_options();
+  $form['newssubscription_general_settings']['newssubscription_thumb_image_style'] = array(
+    '#type' => 'select',
+    '#title' => 'Kies de afbeeldingsstijl voor de nieuwsberichten',
+    '#options' => $image_styles,
+    '#default_value' => variable_get('newssubscription_thumb_image_style', 'thumbnail'),
+    '#required' => TRUE,
+  );
+
   $secret_default = variable_get('newssubscription_secret', NULL);
   $form['newssubscription_general_settings']['newssubscription_secret'] = array(
     '#type' => 'textfield',
