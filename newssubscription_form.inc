@@ -100,6 +100,7 @@ function newssubscription_form($form, &$form_state, $form_name, $arg1 = NULL, $a
   );
 
   // Add header image.
+  /*
   $file_path = drupal_get_path('module', 'newssubscription') . '/header_images/' . $storage['current_page'] . '.jpg';
   if (file_exists($file_path)) {
     global $base_url;
@@ -107,6 +108,7 @@ function newssubscription_form($form, &$form_state, $form_name, $arg1 = NULL, $a
       '#markup' => '<div class="form_header"><img src="' . $base_url . '/' . drupal_get_path('module', 'newssubscription') . '/header_images/' . $storage['current_page'] . '.jpg" /></div>',
     );
   }
+  */
 
   // Add form navigation.
   if ($storage['current_page'] !== $storage['feedback_page'] && !in_array($storage['current_page'], $storage['no_nav_pages'])) {

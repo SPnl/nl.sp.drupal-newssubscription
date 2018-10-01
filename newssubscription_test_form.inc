@@ -16,7 +16,7 @@ function newssubscription_test_form($form, &$form_state) {
   $form['mail'] = array(
     '#type' => 'textfield',
     '#title' => 'E-mailadres',
-    '#default_value' => 'test@test.com',
+    '#default_value' => variable_get('newssubscription_test_mail'),
   );
 
   $types = array(
@@ -46,6 +46,8 @@ function newssubscription_test_form_submit($form, &$form_state) {
     $nodes = $single_nodes;
   }
 
+  variable_set('newssubscription_test_mail', $form_state['values']['mail']);
+
   $content = newssubscription_get_mail_content($nodes, $form_state['values']['type'], 'Thomas de Graaff');
   $to = $form_state['values']['mail'];
   $language = language_default();
@@ -57,5 +59,5 @@ function newssubscription_test_form_submit($form, &$form_state) {
     'name' => '',
     'encoded_id' => newssubscription_encode(761666),
   );
-  drupal_mail('newssubscription', 'new-content-message', $to, $language, $params, $from, TRUE);
+  $result = drupal_mail('newssubscription', 'new-content-message', $to, $language, $params, $from, TRUE);
 }

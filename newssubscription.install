@@ -27,6 +27,8 @@ function newssubscription_uninstall() {
   variable_del('newssubscription_direct_mail_last_cron');
   variable_del('newssubscription_daily_digest_last_cron');
   variable_del('newssubscription_weekly_digest_last_cron');
+  variable_del('newssubscription_test_mail');
+  variable_del('newssubscription_banner_image');
 }
 
 /**

@@ -73,7 +73,7 @@ function newssubscription_send_news_mail($news_to_send) {
       $language = language_default();
 
       $from = variable_get('site_mail', ini_get('sendmail_from'));
-      drupal_mail('newssubscription', 'new-content-message', $to, $language, $mail_data, $from, TRUE);
+      $result = drupal_mail('newssubscription', 'new-content-message', $to, $language, $mail_data, $from, TRUE);
     }
   }
 }
