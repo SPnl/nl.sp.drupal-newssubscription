@@ -110,6 +110,14 @@ function newssubscription_menu() {
     'access arguments' => array('edit sp sections'),
   );
 
+  $cron_key = variable_get('cron_key');
+  $items['nieuwsaanmelding/cron/' . $cron_key] = array(
+    'title' => 'Newssubscription cron',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'newssubscription_customcron',
+    'access arguments' => array('access content'),
+  );
+
   return $items;
 }
 
@@ -140,19 +148,7 @@ function newssubscription_get_page($form_callback, $form_name, $arg1 = NULL, $ar
  * Implements hook_cron().
  */
 function newssubscription_cron() {
-
-  if (variable_get('newssubscription_active') == 1) {
-    $lastrun = variable_get('newssubscription_cron_lastrun');
-    if ($lastrun < (time() - 3600)) {
-      variable_set('newssubscription_cron_lastrun', time());
-      newssubscription_submit_pending();
-      newssubscription_send_reminders();
-    }
-    $active = variable_get('newssubscription_active', NULL);
-    if ($active) {
-      newssubscription_send_news();
-    }
-  }
+  newssubscription_customcron();
 }
 
 /**
@@ -211,4 +207,18 @@ function newssubscription_sp_sections_form($form, &$form_state) {
     '#tree' => TRUE,
   );
   return system_settings_form($form);
+}
+
+function newssubscription_customcron() {
+  if (variable_get('newssubscription_active') == 1) {
+    // Send reminders every hour.
+    $lastrun = variable_get('newssubscription_cron_lastrun');
+    if ($lastrun < (time() - 3600)) {
+      newssubscription_submit_pending();
+      newssubscription_send_reminders();
+    }
+    // Send news.
+    newssubscription_send_news();
+    variable_set('newssubscription_cron_lastrun', time());
+  }
 }
