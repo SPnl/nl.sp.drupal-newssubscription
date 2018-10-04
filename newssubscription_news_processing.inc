@@ -3,11 +3,11 @@
 function newssubscription_send_news() {
   $batch_size = 1000;
   // Weekly digest (sunday = 0, monday = 1 etc.).
-  if (TRUE || date('w') === 6 && variable_get('newssubscription_weekly_digest_last_cron') < time() - 86400) {
+  if (date('w') === 6 && variable_get('newssubscription_weekly_digest_last_cron') < time() - 86400) {
     newssubscription_send_news_by_type('weekly_digest', $batch_size);
   }
   // Daily digest (hour = 0-23).
-  if (TRUE || date('G') === 16 && variable_get('newssubscription_daily_digest_last_cron') < time() - 3600) {
+  if (date('G') === 16 && variable_get('newssubscription_daily_digest_last_cron') < time() - 3600) {
     newssubscription_send_news_by_type('daily_digest', $batch_size);
   }
   // Direct mail.
