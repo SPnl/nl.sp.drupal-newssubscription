@@ -1,13 +1,13 @@
 <?php
 
 function newssubscription_send_news() {
-  $batch_size = 1000;
+  $batch_size = 200;
   // Weekly digest (sunday = 0, monday = 1 etc.).
-  if (date('w') === 6 && variable_get('newssubscription_weekly_digest_last_cron') < time() - 86400) {
+  if (date('w') == 6 && variable_get('newssubscription_weekly_digest_last_cron', 0) < time() - 86400) {
     newssubscription_send_news_by_type('weekly_digest', $batch_size);
   }
   // Daily digest (hour = 0-23).
-  if (date('G') === 16 && variable_get('newssubscription_daily_digest_last_cron') < time() - 3600) {
+  if (date('G') == 16 && variable_get('newssubscription_daily_digest_last_cron', 0) < time() - 3600) {
     newssubscription_send_news_by_type('daily_digest', $batch_size);
   }
   // Direct mail.
@@ -15,9 +15,12 @@ function newssubscription_send_news() {
 }
 
 function newssubscription_send_news_by_type($type, $batch_size) {
+  variable_set('newssubscription_' . $type . '_last_cron', time())  ;
   // Get news nodes.
   $nodes = newssubscription_get_news_nodes($type);
   if ($nodes) {
+    watchdog('newssubscription', 'Sending ' . $type . ' news.');
+    watchdog('newssubscription', 'Found nodes:' . print_r($nodes, TRUE));
     // Get recipients (in batches).
     $batches = newssubscription_get_number_of_batches($type, $batch_size);
     if ($batches) {
@@ -26,6 +29,7 @@ function newssubscription_send_news_by_type($type, $batch_size) {
         $recipients = array();
         newssubscription_get_news_recipients($type, $batch_size, $batch, $recipients);
         if ($recipients) {
+          watchdog('newssubscription', 'Found recipients:' . print_r($recipients, TRUE));
           // Create send data..
           foreach ($recipients as $recipient) {
             $recipient_nodes = array();
@@ -48,6 +52,7 @@ function newssubscription_send_news_by_type($type, $batch_size) {
             }
           }
           if (!empty($news_to_send_data)) {
+            watchdog('newssubscription', 'Found news to send:' . print_r($news_to_send_data, TRUE));
             newssubscription_send_news_mail($news_to_send_data);
           }
         }
@@ -61,6 +66,7 @@ function newssubscription_send_news_mail($news_to_send) {
     foreach ($news_to_send as $news_message_data) {
       $nodes = node_load_multiple($news_message_data['node_ids']);
       $name = empty($news_message_data['first_name']) ? $news_message_data['display_name'] : $news_message_data['first_name'];
+      $type = $news_message_data['type'];
       $content = newssubscription_get_mail_content($nodes, $type, $name);
       $mail_data = array(
         'subject' => $content['subject'],
@@ -74,6 +80,7 @@ function newssubscription_send_news_mail($news_to_send) {
 
       $from = variable_get('site_mail', ini_get('sendmail_from'));
       $result = drupal_mail('newssubscription', 'new-content-message', $to, $language, $mail_data, $from, TRUE);
+      watchdog('newssubscription', 'Result drupal mail:' . print_r($result, TRUE));
     }
   }
 }
@@ -86,6 +93,8 @@ function newssubscription_get_news_nodes($type) {
   $theme_nids = newssubscription_get_themes_nids();
 
   $since_date = max(variable_get('newssubscription_' . $type . '_last_creation_date'), variable_get('newssubscription_active_date', time()));
+
+  $last_created = 0;
 
   foreach ($theme_nids as $theme => $theme_nid) {
     // TODO: filter publication nodes that have parent node.
