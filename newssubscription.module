@@ -39,8 +39,10 @@ function newssubscription_menu() {
       'access callback' => TRUE,
     );
     // Add arguments to form callback.
-    foreach ($path_arguments as $key => $path_argument) {
-      $items[$path_name]['page arguments'][] = $key + 2;
+    if (!empty($path_arguments)) {
+      foreach ($path_arguments as $key => $path_argument) {
+        $items[$path_name]['page arguments'][] = $key + 2;
+      }
     }
     // Optionally set user access permissions.
     if (!empty($settings_callback('permissions'))) {
