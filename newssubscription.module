@@ -211,9 +211,9 @@ function newssubscription_customcron() {
     if ($lastrun < (time() - 3600)) {
       newssubscription_submit_pending();
       newssubscription_send_reminders();
+      variable_set('newssubscription_cron_lastrun', time());
     }
     // Send news.
     newssubscription_send_news();
-    variable_set('newssubscription_cron_lastrun', time());
   }
 }
