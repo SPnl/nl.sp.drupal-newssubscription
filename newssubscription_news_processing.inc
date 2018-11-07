@@ -68,7 +68,7 @@ function newssubscription_send_news_mail($news_to_send) {
     $min_time_per_message = ((1 / $max_messages_per_second) / 1000000);
     watchdog('test', 'Min time per message: ' . $min_time_per_message);
 
-    array_reverse($new_to_send);
+    array_reverse($news_to_send);
     foreach ($news_to_send as $news_message_data) {
       usleep($delay);
 
