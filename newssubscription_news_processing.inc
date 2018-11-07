@@ -63,7 +63,17 @@ function newssubscription_send_news_by_type($type, $batch_size) {
 
 function newssubscription_send_news_mail($news_to_send) {
   if ($news_to_send) {
+    $delay = 0;
+    $max_messages_per_second = variable_get('newssubscription_max_messages_per_second', 10);
+    $min_time_per_message = ((1 / $max_messages_per_second) / 1000000);
+    watchdog('test', 'Min time per message: ' . $min_time_per_message);
+
+    array_reverse($new_to_send);
     foreach ($news_to_send as $news_message_data) {
+      usleep($delay);
+
+      $begin_time = microtime(TRUE);
+      watchdog('test', 'Begin time: ' . $begin_time);
       $nodes = node_load_multiple($news_message_data['node_ids']);
       $name = empty($news_message_data['first_name']) ? $news_message_data['display_name'] : $news_message_data['first_name'];
       $type = $news_message_data['type'];
@@ -81,6 +91,19 @@ function newssubscription_send_news_mail($news_to_send) {
       $from = variable_get('site_mail', ini_get('sendmail_from'));
       $result = drupal_mail('newssubscription', 'new-content-message', $to, $language, $mail_data, $from, TRUE);
       watchdog('newssubscription', 'Result drupal mail:' . print_r($result, TRUE));
+      $end_time = microtime(TRUE);
+      watchdog('test', 'End time: ' . $end_time);
+
+      $delay_new = $min_time_per_message - $end_time + $begin_time;
+      watchdog('test', 'Delay new: ' . $delay_new);
+
+      if ($delay_new > 0) {
+        $delay = $delay_new;
+      }
+      else {
+        $delay = 0;
+      }
+      watchdog('test', 'Delay: ' . $delay);
     }
   }
 }
@@ -409,16 +432,6 @@ function newssubscription_get_digest_mail_data($nodes, $type, $name) {
   $data['type'] = $type;
   $data['name'] = $name;
   return $data;
-}
-
-/**
- * Defines e-mail.
- */
-function newssubscription_get_new_content_mail(&$message, $params) {
-  global $base_url;
-  $name = $params['name'];
-  $message['subject'] = $params['subject'];
-  $message['body'][] = $params['content'];
 }
 
 function newssubscription_send_reminders() {

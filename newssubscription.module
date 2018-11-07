@@ -152,7 +152,8 @@ function newssubscription_get_page($form_callback, $form_name, $arg1 = NULL, $ar
 function newssubscription_mail($key, &$message, $params) {
   switch ($key) {
     case "new-content-message":
-      newssubscription_get_new_content_mail($message, $params);
+      $message['subject'] = $params['subject'];
+      $message['body'][] = $params['content'];
       break;
 
     case 'verificatie':
