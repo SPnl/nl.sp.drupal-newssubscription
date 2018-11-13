@@ -113,6 +113,7 @@ function newssubscription_subscribe_page_select_form(&$form, &$form_state) {
     '#type' => 'checkboxes',
     '#title' => 'Belangrijk SP nieuws',
     '#options' => array('newsletter' => 'Ik ontvang graag de SP nieuwsbrief met belangrijk SP nieuws.'),
+    '#default_value' => array('newsletter'),
   );
 
   $themes = newssubscription_get_themes_list();
@@ -125,6 +126,7 @@ function newssubscription_subscribe_page_select_form(&$form, &$form_state) {
       'wrapper' => 'newssubscription_form_wrapper',
       'callback' => 'newssubscription_ajax_callback',
     ),
+    '#default_value' => array_keys($themes),
   );
 
   $frequenties = array(

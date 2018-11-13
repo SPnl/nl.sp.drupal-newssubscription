@@ -137,7 +137,7 @@ function newssubscription_form($form, &$form_state, $form_name, $arg1 = NULL, $a
             'callback' => 'newssubscription_ajax_callback',
           ),
           '#disabled' => !in_array($form_page, $storage['nav_history']) || $form_page === $storage['current_page'],
-          '#attributes' => ($form_page === $storage['current_page']) ? array('class' => array('active')) : array(),
+          '#attributes' => ($form_page === $storage['current_page']) ? array('class' => array('hollow', 'active')) : array(),
         );
       }
     }
