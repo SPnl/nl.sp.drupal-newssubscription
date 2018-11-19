@@ -121,14 +121,14 @@ function newssubscription_get_news_nodes($type) {
 
   foreach ($theme_nids as $theme => $theme_nid) {
     // TODO: filter publication nodes that have parent node.
-    $query = "SELECT nid, created FROM field_data_thema t INNER JOIN node n ON t.entity_id = n.nid WHERE status = 1 AND type IN (" . $type_filter . ") AND thema_nid = :theme_nid AND created > :since_date";
+    $query = "SELECT nid, created FROM field_data_thema t INNER JOIN node n ON t.entity_id = n.nid INNER JOIN field_data_actualiteit_tags g ON g.entity_id = n.nid WHERE status = 1 AND type IN (" . $type_filter . ") AND thema_nid = :theme_nid AND created > :since_date";
     $result = db_query($query, array(
       ':theme_nid' => $theme_nid,
       ':since_date' => $since_date,
     ));
     if ($result) {
       while ($row = $result->fetchAssoc()) {
-        $news_nodes[$theme][] = $row['nid'];
+        $news_nodes[$theme][$row['nid']] = $row['nid'];
         if ($row['created'] > $last_created) {
           $last_created = $row['created'];
         }
