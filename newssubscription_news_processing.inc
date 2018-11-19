@@ -85,7 +85,7 @@ function newssubscription_send_news_mail($news_to_send) {
         'encoded_id' => newssubscription_encode($news_message_data['contact_id']),
       );
 
-      $to = $news_message_data['display_name'] . ' <' . $news_message_data['email'] . '>';
+      $to = $news_message_data['email'];
       $language = language_default();
 
       $from = variable_get('site_mail', ini_get('sendmail_from'));
@@ -121,7 +121,7 @@ function newssubscription_get_news_nodes($type) {
 
   foreach ($theme_nids as $theme => $theme_nid) {
     // TODO: filter publication nodes that have parent node.
-    $query = "SELECT nid, created FROM field_data_thema t INNER JOIN node n ON t.entity_id = n.nid WHERE type IN (" . $type_filter . ") AND thema_nid = :theme_nid AND created > :since_date";
+    $query = "SELECT nid, created FROM field_data_thema t INNER JOIN node n ON t.entity_id = n.nid WHERE status = 1 AND type IN (" . $type_filter . ") AND thema_nid = :theme_nid AND created > :since_date";
     $result = db_query($query, array(
       ':theme_nid' => $theme_nid,
       ':since_date' => $since_date,
